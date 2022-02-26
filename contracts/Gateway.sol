@@ -6,7 +6,7 @@
 
 pragma solidity ^0.8.0;
 
-/* ERC token contracts */
+/* ERC token contracts */-
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -26,7 +26,8 @@ import "./RNFT.sol";
 import "./IGateway.sol";
 
 
-contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
+contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable,
+OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
 
     /** RNFT Contract Address for Inter-Contract Execution */
     address internal _RNFTContractAddress;
@@ -46,11 +47,12 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
 
     /// @dev lending record mapping each owner to his lendings - lendRegistry
     mapping (address=>lendRecord) internal lendRegistry;
+
     uint256 private _fee; // %
     address private _treasuryAddress;
     uint64 private _maxRentDurationLimit; // set max limit 1 year
 
-    /* Proxy upgradable implementation */
+    /* Proxy upgradable constructor */
     function initialize(address rNFTContractAddress_) public initializer {
         __AccessControl_init();
         __ReentrancyGuard_init();
@@ -93,11 +95,11 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
         uint256 timeUnit,
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
-        ) public onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId){
+        ) external onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId){
 
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
-        require(timeUnit == DAY_IN_SECONDS || timeUnit == WEEK_IN_SECONDS || timeUnit == MONTH_IN_SECONDS,"incorrect time unit");
+        require(timeUnit == DAY_IN_SECONDS || timeUnit == WEEK_IN_SECONDS || timeUnit == MONTH_IN_SECONDS,"invalid time unit");
         require(minDuration > 0 && maxDuration > 0, "max or min duration should be > 0");
         require(maxDuration > minDuration,"invalid duration");
         require(maxDuration < block.timestamp,"invalid maxDuration");
@@ -157,13 +159,15 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
         _lender = lendRegistry[nftAddress].lendingMap[oNftId].lender;
         IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, _lender,tokenId);
+        // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
+        require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         require(rNFTCtrInstance.isApprovedRenter(renterAddress, _RNFT_tokenId)," renter address not approved");
         require(!rNFTCtrInstance.isRented(_RNFT_tokenId),"NFT rental status: already rented");
         // Mint RNFT with specific time duration for rent purpose and save Rent metadata
-        rNFTCtrInstance.mintRNFT(nftAddress, originalTokenId, _lender, _RNFT_tokenId);
+        rNFTCtrInstance._mintRNFT(nftAddress, originalTokenId, _lender, _RNFT_tokenId);
         distributePaymentTransactions(_RNFT_tokenId, renterAddress);
         //Call initiateRent() function to change the rent status in RNFT (isRented=True) and calcilate start/end time
-        initiateRent(_RNFT_tokenId);
+        rNFTCtrInstance.initiateRent(_RNFT_tokenId);
         return _RNFT_tokenId;
 
     }
@@ -182,8 +186,7 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
         // Transaction to be sent to beneficiary (NFT Lender)
         uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(totalRentPrice,_serviceFeeAmount);
         uint256 _renterBalance = erc20TokenInstance.balanceOf(_renterAddress);
-        require(_renterBalance >= totalRentPrice,
-        "Not enough balance to execute payment transaction");
+        require(_renterBalance >= totalRentPrice,"Not enough balance to execute payment transaction");
         /** Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens. */
         bool success = erc20CtrInstance.approve(address(this),totalRentPrice); // change to SafeERC20
         require(success, "Allowance Approval failed");
@@ -196,35 +199,59 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
     }
 
     /// @dev to cancel a renter approval if tenant doesn't confirm and pay rent in X hours time after approval
-    function cancelApproval(address nftAddress, uint256 nftId) public onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
+    function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) 
+    public onlyApprovedOrOwner(msg.sender,nftAddress,nftId) returns(bool){
+         IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,tokenId);
+        // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
+        require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
+        require(NFTCtrInstance.isApprovedRenter(renterAddress,msg.sender,_RNFT_tokenId)," renter address is not approved");
+        require(!rNFTCtrInstance.isRented(_RNFT_tokenId),"NFT rental status: already rented");
+        // call clearApprovalState to delete RNFTMetadata metadata key: _RtokenIds.current();
+        rNFTCtrInstance.clearApprovalState(_RNFT_tokenId);
         _;
     }
-
 
     /// @dev to get Lending information based on the nftAddress and tokenID
     function getLending(address nftAddress,uint256 nftId) public view returns (Lending memory lendingData){
         lendingData = lendRegistry[nftAddress].lendingMap[nftId];
     }
 
-    /// @dev to cancel a NFT listing and remove it from the marketplace
-    function cancelLending(address nftAddress, uint256 nftId) public onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
+    /// @dev to remove a NFT listing from the marketplace
+    function removeLending(address nftAddress, uint256 nftId) public onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
         delete lendRegistry[nftAddress].lendingMap[nftId];
         emit remove_lending(msg.sender,nftAddress, nftId);
     }
 
-    /// @dev to Redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)
-    function redeemNFT(address nftAddress, uint256 oNftId,uint256 _RNFT_tokenId)
+     // @dev terminate rent without redeeming original NFT 
+    // function terminateRentAgreement(address nftAddress, uint256 oNftId)
+    // external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId){
+    //     require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized address is not owner or lending not registered"
+    //     IRNFT(_RNFTContractAddress).terminateRent(_RNFT_tokenId);
+
+    // }
+
+    /// @dev terminate rent and redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)
+    function redeemNFT(address nftAddress, uint256 oNftId)
     external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId){
         require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized address is not owner or lending not registered");
-        IRNFT(_RNFTContractAddress).terminateRent(_RNFT_tokenId);
+        // call removeLending()
+        terminateRentAgreement(_RNFT_tokenId);
+        // call redeemNFT() to transfer NFT back to its owner
+        // IRNFT(_RNFTContractAddress)._redeemNFT(_RNFT_tokenId);
 
     }
+
 
     /** MetaRents Platform settings & configuration **/
 
     function setFee(uint256 fee_) public onlyAdmin{
         require(fee_ < 1e2,"invalid fee");
         _fee = fee_;
+    }
+
+    function getFee() public view onlyAdmin returns(uint256){
+        return _fee;
     }
 
     function setMarketGatewayTreasury(address treasuryAddress) public onlyAdmin{
@@ -235,8 +262,9 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
         _maxRentDurationLimit = mdl;
     }
 
-    function getSupportedPaymentTokens(address token_contract_adress) external view returns(address[]) {
-        // require(supportedPaymentTokens
+    function getSupportedPaymentTokens() public view returns(address[] memory) {
+        return supportedPaymentTokens;
+
     }
     // change to Modifier !!
     function isSupportedPaymentToken(address tokenAddress) external view returns(bool) {
@@ -259,6 +287,9 @@ contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgr
         return (tokenAddress, tokenSymbol);
     }
 
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable) returns (bool){
+        return super.supportsInterface(interfaceId);
+    }
 
     /** Gateway Contract Role-based Access Control */
 

@@ -113,7 +113,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
       // RNFT must not be rented
       require(!_rmetadata[RTokenId].isRented, 'RNFT is already rented');
 
-      // RNFT about to be rented while still in contract, invalidate the old metadata mapping
+      // RNFT about to be rented while still in contract, clear/invalidate the old metadata mapping
       delete _rmetadata[RTokenId];
     }
     else
@@ -158,7 +158,12 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
       return RTokenId;
   }
 
-  function _mintRNFT(address nftAddress, address orignalOwner, uint256 oTokenId, uint256 _RTokenId) private returns (uint256)
+  function clearApprovalState(uint256 RTokenId) external onlyAdmin{
+    // Clear/invalidate the preminted rnft metadata mapping
+    delete _rmetadata[RTokenId];
+  }
+
+  function _mintRNFT(address nftAddress, address orignalOwner, uint256 oTokenId, uint256 _RTokenId) private onlyAdmin returns (uint256)
   {
     // Create new instance
     IERC721 origContract = IERC721(nftAddress);
@@ -183,6 +188,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   function startRent(uint256 RTokenId) external onlyAdmin{
     // initiateRent()
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
+    require(isRented(RTokenId),"NFT rental status: already rented");
     uint256 _now = block.timestamp;
     _rmetadata[RTokenId].rStartTime = _now;
     _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
@@ -191,14 +197,15 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
 
   function terminateRent(uint256 RTokenId) external onlyAdmin{
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
-    // _burnRNFT();
+    require(!isRented(RTokenId),"NFT rental status: not rented");
+    // check if rent duration is due
+    _burnRNFT();
   }
 
 
-  // function _burnRNFT() private
-  // {
-  //   _;
-  // }
+  function _burnRNFT() private{
+    _;
+  }
 
   function getRnftFromNft(address origContract, address orignalOwner, uint256 oTokenId) public view returns (uint256)
   {
