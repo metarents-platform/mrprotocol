@@ -6,7 +6,7 @@
 
 pragma solidity ^0.8.0;
 
-/* ERC token contracts */-
+/* ERC token contracts */
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -77,8 +77,8 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     }
 
     /// @dev check if address is owner or approved to operate NFT
-    modifier onlyApprovedOrOwner(address operator,address nftAddress,uint256 tokenId) {
-        IERC721 nftCtrInstance = ERC721(nftAddress);
+    modifier _onlyApprovedOrOwner(address operator,address nftAddress,uint256 tokenId) {
+        IERC721 nftCtrInstance = IERC721(nftAddress);
         address owner = nftCtrInstance.ownerOf(tokenId);
         require(owner != address(0),"ERC721: Failed, spender query nonexistent token");
         require(operator == owner || nftCtrInstance.getApproved(tokenId) == operator || nftCtrInstance.isApprovedForAll(owner, operator),
@@ -95,7 +95,7 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
         uint256 timeUnit,
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
-        ) external onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId){
+        ) external _onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId){
 
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
@@ -130,7 +130,7 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
         uint256 rentDuration,
         address renter_address
     ) external nonReentrant
-    onlyApprovedOrOwner(msg.sender,nftAddress,_NFTId) returns(address _rNftId){
+    _onlyApprovedOrOwner(msg.sender,nftAddress,_NFTId) returns(address _rNftId){
         // supply to RNFT contract NFT metadata to map it to owner and RNFT metadata and approve renter
         _rNftId = approveRenterRequest(msg.sender,nftAddress,_NFTId, renter_address,rentDuration);
         emit RenterApprovedAndRNFTPreMinted(msg.sender,nftAddress,_NFTId, _rNftId,renter_address,rentDuration);
@@ -140,7 +140,7 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     /// @dev to approve a renter by supplying 'renter_address' and !!'rent_duration'!! to RNFT Contract
     /// @dev RNFT contract maps the RNFT to its metadata
     function approveRenterRequest(address renterAddress,address nftAddress, uint256 oNftId, uint256 rentDuration)
-    external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId) returns (uint256){
+    external nonReentrant _onlyApprovedOrOwner(msg.sender,nftAddress,oNftId) returns (uint256){
         lendingRecord = lendRegistry[nftAddress].lendingMap[oNftId];
         require(rentDuration % lendingRecord.timeUnit == 0," Invalid rent duration: not seconds");
         require(rentDuration >= lendingRecord.minDuration &&
@@ -167,7 +167,7 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
         rNFTCtrInstance._mintRNFT(nftAddress, originalTokenId, _lender, _RNFT_tokenId);
         distributePaymentTransactions(_RNFT_tokenId, renterAddress);
         //Call initiateRent() function to change the rent status in RNFT (isRented=True) and calcilate start/end time
-        rNFTCtrInstance.initiateRent(_RNFT_tokenId);
+        rNFTCtrInstance.startRent(_RNFT_tokenId);
         return _RNFT_tokenId;
 
     }
@@ -176,7 +176,7 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     internal payable returns (uint256 totalRentPrice,uint256 _serviceFee){
         // cases (ether native, other supported 20 tokens)
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[NftId];
-        IERC20 erc20TokenInstance = IERC20(_lendRecord._paymentMethod);
+        IERC20 erc20CtrInstance = IERC20(_lendRecord._paymentMethod);
         IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         // Rent price calculation or getRentPrice(_RNFT_tokenId)
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
@@ -188,8 +188,8 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
         uint256 _renterBalance = erc20TokenInstance.balanceOf(_renterAddress);
         require(_renterBalance >= totalRentPrice,"Not enough balance to execute payment transaction");
         /** Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens. */
-        bool success = erc20CtrInstance.approve(address(this),totalRentPrice); // change to SafeERC20
-        require(success, "Allowance Approval failed");
+        // bool success = erc20CtrInstance.approve(address(this),totalRentPrice); // change to SafeERC20
+        // require(success, "Allowance Approval failed");
         // Send `rentPriceAfterFee` tokens from `render wallet address` to `lender` using the allowance mechanism.
         success = erc20CtrInstance.transferFrom(_renterAddress,_lendRecord.lender,rentPriceAfterFee);
         require(success, "Transfer 1 - failed");
@@ -199,10 +199,10 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     }
 
     /// @dev to cancel a renter approval if tenant doesn't confirm and pay rent in X hours time after approval
-    function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) 
-    public onlyApprovedOrOwner(msg.sender,nftAddress,nftId) returns(bool){
+    function cancelApproval(address nftAddress, uint256 nftId, address renterAddress)
+    public _onlyApprovedOrOwner(msg.sender,nftAddress,nftId) returns(bool){
          IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
-        _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,tokenId);
+        _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,msg.sender,tokenId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         require(NFTCtrInstance.isApprovedRenter(renterAddress,msg.sender,_RNFT_tokenId)," renter address is not approved");
@@ -218,28 +218,32 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     }
 
     /// @dev to remove a NFT listing from the marketplace
-    function removeLending(address nftAddress, uint256 nftId) public onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
+    function removeLending(address nftAddress, uint256 nftId) public _onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
         delete lendRegistry[nftAddress].lendingMap[nftId];
         emit remove_lending(msg.sender,nftAddress, nftId);
     }
 
-     // @dev terminate rent without redeeming original NFT 
-    // function terminateRentAgreement(address nftAddress, uint256 oNftId)
-    // external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId){
-    //     require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized address is not owner or lending not registered"
-    //     IRNFT(_RNFTContractAddress).terminateRent(_RNFT_tokenId);
-
-    // }
+     // @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)
+    function terminateRentAgreement(address nftAddress, uint256 oNftId) external nonReentrant{
+        require(lendRegistry[nftAddress] != 0 &&
+        msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
+        IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
+        // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
+        require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
+        IRNFT(_RNFTContractAddress).terminateRent(_RNFT_tokenId);
+    }
 
     /// @dev terminate rent and redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)
-    function redeemNFT(address nftAddress, uint256 oNftId)
-    external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId){
-        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized address is not owner or lending not registered");
-        // call removeLending()
-        terminateRentAgreement(_RNFT_tokenId);
+    function redeemNFT(address nftAddress, uint256 oNftId) external nonReentrant{
+        require(lendRegistry[nftAddress] != 0 &&
+        msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
+         IERC721 rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
+        // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
+        require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         // call redeemNFT() to transfer NFT back to its owner
-        // IRNFT(_RNFTContractAddress)._redeemNFT(_RNFT_tokenId);
-
+        IRNFT(_RNFTContractAddress)._redeemNFT(_RNFT_tokenId, nftAddress, oNftId, msg.sender);
     }
 
 
@@ -268,15 +272,13 @@ OwnableUpgradeable, IGateway, RNFT, IERC20Upgradeable{
     }
     // change to Modifier !!
     function isSupportedPaymentToken(address tokenAddress) external view returns(bool) {
-        bool isSupported = false;
         for (uint i = 0 ; i < supportedPaymentTokens.length; i++) {
             if (tokenAddress == supportedPaymentTokens[i]) {
-                isSupported = true;
-                break;
+                return true;
             }
         }
     //    require(isSupported,"ERC20 Token not supported as payment method");
-       return isSupported;
+       return false;
     }
 
     function setSupportedPaymentTokens(address tokenAddress) external onlyAdmin returns(address, string memory){
