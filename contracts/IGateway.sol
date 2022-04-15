@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 interface IGateway {
 
-    /// @dev Explain to a developer any extra details
+    /// @dev Lending metadata
     struct Lending {
         address lender;
         uint256 nftId;
         address nftAddress;
-        uint256 maxDuration;
-        uint256 minDuration;
+        uint128 maxDuration;
+        uint128 minDuration;
         uint256 timeUnit;
         uint256 rentPricePerTimeUnit; // price per second
         address acceptedPaymentMethod;
@@ -28,65 +28,51 @@ interface IGateway {
 
     event add_admin(address newAdmin);
     event remove_admin(address current_admin);
-
     event add_lending(address lender, address nftAddress, uint256 nftId);
     event remove_lending(address lender, address nftAddress, uint256 nftId);
-    event NFTOnLent(address lender,address nftAddress, uint256 original_nftId,uint64 maxDuration,
-    uint64 minDuration,uint256 rentPricePerTimeUnit);
-    event RenterApprovedAndRNFTPreMinted(address lender,address nftAddress, uint256 original_nftId, uint256 _rNftId, uint64 maxDuration,
-    uint64 minDuration,uint256 rentPricePerTimeUnit, uint256 rentDuration);
+    event NFTOnLent(address lender,address nftAddress, uint256 original_nftId,uint128 maxDuration,uint128 minDuration,uint256 rentPricePerTimeUnit);
+    event RenterApprovedAndRNFTPreMinted(address lender,address nftAddress, uint256 original_nftId,address _RNFT_tokenId, address renter_address, uint256 rent_duration,uint256 rentPricePerTimeUnit);
 
     function createLendRecord(
         address nftAddress,
         uint256 original_nftId,
-        uint256 maxDuration,
-        uint256 minDuration,
+        uint128 maxDuration,
+        uint128 minDuration,
         uint256 timeUnit,
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
-        ) external onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId);
+    ) external;
 
     function _approveAndPreMintRNFT(
         address nftAddress,
         uint256 _NFTId,
         uint256 rentDuration,
         address renter_address
-    ) external nonReentrant
-    onlyApprovedOrOwner(msg.sender,nftAddress,_NFTId) returns(address _rNftId);
+    ) external returns(uint256 _rNftId);
 
-    function approveRenterRequest(address renterAddress,address nftAddress, uint256 oNftId, uint256 rentDuration)
-    external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId) returns (uint256);
-
-    function confirmRentAgreementAndPay(address nftAddress,uint256 originalTokenId)
-    external nonReentrant virtual returns (uint256 _RNFT_tokenId);
+    function approveRenterRequest(address renterAddress,address nftAddress, uint256 oNftId, uint256 rentDuration) external returns (uint256);
+    function confirmRentAgreementAndPay(address nftAddress,uint256 originalTokenId) external returns (uint256 _RNFT_tokenId);
     
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    internal payable returns (uint256 totalRentPrice,uint256 _serviceFee);
+    external payable returns (uint256 totalRentPrice,uint256 _serviceFee);
     
-    function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) 
-    public onlyApprovedOrOwner(msg.sender,nftAddress,nftId) returns(bool);
-
-    function getLending(address nftAddress,uint256 nftId) public view returns (Lending memory lendingData);
-
-    function removeLending(address nftAddress, uint256 nftId) public onlyApprovedOrOwner(msg.sender,nftAddress,nftId);
-
-    function terminateRentAgreement(address nftAddress, uint256 oNftId)
-    external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId);
-
-    function redeemNFT(address nftAddress, uint256 oNftId)
-    external nonReentrant onlyApprovedOrOwner(msg.sender,nftAddress,oNftId);
+    function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) external returns(bool);
+    function getLending(address nftAddress,uint256 nftId) external view returns (Lending memory lendingData);
+    function removeLending(address nftAddress, uint256 nftId) external;
+    function terminateRentAgreement(address nftAddress, uint256 oNftId)external;
+    function redeemNFT(address nftAddress, uint256 oNftId) external;
 
      /** MetaRents Platform settings & configuration **/
-    function setFee(uint256 fee_) public onlyAdmin;
-    function getFee() public view onlyAdmin returns(uint256);
-    function setMarketGatewayTreasury(address treasuryAddress) public onlyAdmin;
-    function setMaxRentDurationLimit(uint64 mdl) public onlyAdmin;
-    function getSupportedPaymentTokens() public view returns(address[] memory);
+    function setFee(uint256 fee_) external;
+    function getFee() external view returns(uint256);
+    function setMarketGatewayTreasury(address treasuryAddress) external;
+    function setMaxRentDurationLimit(uint128 mdl) external;
+    function getSupportedPaymentTokens() external view returns(address[] memory);
     function isSupportedPaymentToken(address tokenAddress) external view returns(bool);
-    function setSupportedPaymentTokens(address tokenAddress) external onlyAdmin returns(address, string memory);
+    function setSupportedPaymentTokens(address tokenAddress) external returns(address, string memory);
 
     /** Gateway Contract Role-based Access Control */
-    function setNewAdmin(address _newAdmin) external onlyOwner;
-    function removeAdmin(address _admin) external onlyOwner;
+    function setNewAdmin(address _newAdmin) external;
+    function removeAdmin(address _admin) external;
 
 }
