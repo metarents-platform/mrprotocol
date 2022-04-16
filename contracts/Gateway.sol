@@ -107,7 +107,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         require(maxDuration <= _maxRentDurationLimit,"max rent duration exceeds allowed limit");
         require(minDuration % timeUnit == 0 && maxDuration % timeUnit == 0,"duration must be in seconds; multiple of time units");
         //require(timeUnit == TimeUnit.DAY || timeUnit == TimeUnit.MONTH || timeUnit == TimeUnit.WEEK,"incorrect time unit");
-        // store a new lending record metadata
+        // store a new lending record metadata .
         address owner = ERC721(nftAddress).ownerOf(original_nftId);
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[original_nftId];
         _lendRecord.lender = owner;
