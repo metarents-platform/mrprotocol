@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-/// @author Moughite El Joaydi (@Metajazzy)
+/// @author Moughite El Joaydi (@Metajazzy), Robert M. Carden (@crazydevlegend)
 /// @title Market Gateway Contract
 /// @dev Gateway contract serves as a middleware to execute lending and renting operations
 
@@ -131,7 +131,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         address renter_address
     ) external nonReentrant returns(uint256 _rNftId){
         require(renter_address != address(0), 'Invalid renter address: zero address');
-        Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[oNftId];
+        Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[_NFTId];
         // Check if msg.sender is a registered lender and/or authorized to approve rent
         require(msg.sender==lendingRecord.lender,"unauthorized: address is not owner or lending not registered");
         // Check for same address
@@ -212,7 +212,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
     function cancelApproval(address nftAddress, uint256 nftId, address renterAddress)
     public returns(bool isApprovalCanceled){
         // Check if msg.sender is a registered lender and/or authorized to approve rent
-        require(msg.sender==lendRegistry[nftAddress].lendingMap[_NFTId].lender,"unauthorized: address is not owner or lending not registered");
+        require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
 
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,msg.sender,nftId);

@@ -1,6 +1,10 @@
-// contracts/RNFT.sol
+
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
+
+/// @author Moughite El Joaydi (@Metajazzy), Robert M. Carden (@crazydevlegend)
+/// @title Market Gateway Contract
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -200,7 +204,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     
     terminateRent(RTokenId);
     // Reset Owner->RNFT mapping to 0
-    _ OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
+    _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
     delete _rmetadata[RTokenId];
      // Check if burnRNFt should be called in approveRenter (first if branch)
     _burnRNFT(RTokenId); // Burn RNFT only on Redeem
