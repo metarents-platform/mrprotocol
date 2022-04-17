@@ -102,7 +102,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         require(timeUnit == DAY_IN_SECONDS || timeUnit == WEEK_IN_SECONDS || timeUnit == MONTH_IN_SECONDS,"invalid time unit");
         require(minDuration > 0 && maxDuration > 0, "max or min duration should be > 0");
         require(maxDuration > minDuration,"invalid duration");
-        require(maxDuration < block.timestamp,"invalid maxDuration");
+        //require(maxDuration < block.timestamp,"invalid maxDuration");
         // check if maxDuration exceeds marketplace maxDuration limit
         require(maxDuration <= _maxRentDurationLimit,"max rent duration exceeds allowed limit");
         require(minDuration % timeUnit == 0 && maxDuration % timeUnit == 0,"duration must be in seconds; multiple of time units");
