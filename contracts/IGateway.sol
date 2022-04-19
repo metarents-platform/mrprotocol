@@ -62,7 +62,7 @@ interface IGateway {
     function terminateRentAgreement(address nftAddress, uint256 oNftId)external;
     function redeemNFT(address nftAddress, uint256 oNftId) external;
 
-     /** MetaRents Platform settings & configuration **/
+     /** MetaRents platform settings & configuration **/
     function setFee(uint256 fee_) external;
     function getFee() external view returns(uint256);
     function setMarketGatewayTreasury(address treasuryAddress) external;
