@@ -2,7 +2,7 @@
 
 /// @author Moughite El Joaydi (@Metajazzy), Robert M. Carden (@crazydevlegend)
 /// @title Market Gateway Contract
-/// @dev Gateway contract serves as a middleware to execute lending and renting operations
+/// @dev Gateway contract serves as a middleware to execute lending & renting operations
 
 pragma solidity ^0.8.0;
 
