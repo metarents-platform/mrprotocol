@@ -2,7 +2,7 @@
 
 /// @author Moughite El Joaydi (@Metajazzy), Robert M. Carden (@crazydevlegend)
 /// @title Market Gateway Contract
-/// @dev Gateway contract serves as a middleware to execute lending & renting operations
+/// @dev Gateway contract serves as a middleware to execute lending and renting operations
 
 pragma solidity ^0.8.0;
 
@@ -36,7 +36,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
     //_registerInterface(interfaceId);
     using SafeERC20Upgradeable for ERC20;
     using SafeMathUpgradeable for uint256;
-    // enum TimeUnit {DAY, WEEK, MONTH};
+    // change to enum TimeUnit {DAY, WEEK, MONTH};
     // Time Unit constants
     uint128 constant private DAY_IN_SECONDS = 86400;
     uint128 constant private WEEK_IN_SECONDS = 604800;
@@ -50,7 +50,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
 
     uint256 private _fee; // %
     address private _treasuryAddress;
-    uint128 private _maxRentDurationLimit; // set max limit 1 year
+    uint128 private _maxRentDurationLimit; // max rent duration limit 1 year
 
     /* Proxy upgradable constructor */
     function initialize(address rNFTContractAddress_) public initializer {
@@ -70,6 +70,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         _maxRentDurationLimit = 31536000;
     }
 
+    // @dev verifier to check for authorisated administrators
     modifier onlyAdmin()
     {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "ERROR 401: Restricted to admins");
@@ -117,7 +118,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         _lendRecord.minDuration = minDuration;
         _lendRecord.timeUnit = timeUnit;
         _lendRecord.rentPricePerTimeUnit = _rentPricePerTimeUnit; // supplied per second
-        // Add supported token(s) (ETH, MANA) TBC - check if supported by the marketplace contract and owner
+        // Add supported token(s) (ETH, USDC, MANA) TBC - check if supported by the marketplace contract and owner
         require(isSupportedPaymentToken(_paymentMethod),"ERC20 Token not supported as payment method by market gateway");
         _lendRecord.acceptedPaymentMethod = _paymentMethod;
         emit NFTOnLent(owner,nftAddress, original_nftId, maxDuration,minDuration,_rentPricePerTimeUnit);
@@ -129,33 +130,29 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         uint256 _NFTId,
         uint256 rentDuration,
         address renter_address
-    ) external nonReentrant returns(uint256 _rNftId){
+    ) external nonReentrant returns(uint256){
         require(renter_address != address(0), 'Invalid renter address: zero address');
         Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[_NFTId];
         // Check if msg.sender is a registered lender and/or authorized to approve rent
         require(msg.sender==lendingRecord.lender,"unauthorized: address is not owner or lending not registered");
         // Check for same address
         require(msg.sender != renter_address, 'Lender cannot be a renter');
-        // Call initializeRentMetadata() to set initial NFT metadata before approval
-        IRNFT(_RNFTContractAddress).initializeRentMetadata(msg.sender, nftAddress, _NFTId);
+        // Call initializeRentMetadata() to set initial NFT metadata and check approval status before final approval
+        uint256 _rNftId = IRNFT(_RNFTContractAddress).initializeRentMetadata(msg.sender, nftAddress, _NFTId);
         // supply to RNFT contract NFT metadata to map it to its owner and RNFT metadata, and approve renter
-        _rNftId = approveRenterRequest(renter_address, nftAddress,_NFTId, rentDuration);
+        approveRenterRequest(renter_address, nftAddress,_NFTId, rentDuration, _rNftId);
         return _rNftId;
     }
 
     /// @dev to approve a renter by supplying 'renter_address' and !!'rent_duration'!! to RNFT Contract
     /// @dev RNFT contract maps the RNFT to its metadata
-    function approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration)
+    function approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId)
     public nonReentrant returns (uint256 _RNFT_tokenId){
         Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[oNftId];
         require(rentDuration % lendingRecord.timeUnit == 0," Invalid rent duration: not seconds");
         require(rentDuration >= lendingRecord.minDuration && rentDuration <= lendingRecord.maxDuration,"invalid duration");
-        // set nftAddress/onftId to rmetadata in RNFT Contract - initializeRentMetadata()
         // supply all NFT parameters
-        _RNFT_tokenId = IRNFT(_RNFTContractAddress).approveRenter(lendingRecord.timeUnit,rentDuration,lendingRecord.rentPricePerTimeUnit,_renterAddress);
-
-        // _RNFT_tokenId = IRNFT(_RNFTContractAddress).approveRenter(msg.sender,nftAddress,oNftId,lendingRecord.timeUnit,rentDuration,
-        // lendingRecord.rentPricePerTimeUnit,_renterAddress);
+        _RNFT_tokenId = IRNFT(_RNFTContractAddress).approveRenter(lendingRecord.timeUnit,rentDuration,lendingRecord.rentPricePerTimeUnit,_renterAddress, _rNftId);
         emit RenterApprovedAndRNFTPreMinted(msg.sender,nftAddress,oNftId,_RNFT_tokenId,_renterAddress,rentDuration,lendingRecord.rentPricePerTimeUnit);
         return _RNFT_tokenId;
     }
@@ -177,15 +174,16 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
             rNFTCtrInstance._mintRNFT(nftAddress, _lender, originalTokenId, _RNFT_tokenId);
         }
         distributePaymentTransactions(nftAddress, originalTokenId,_RNFT_tokenId, renterAddress);
-        //Call initiateRent() function to change the rent status in RNFT (isRented=True) and calcilate start/end time
+        //Call startRent() function to change the rent status in RNFT (isRented=True) and calculate start/end time
         rNFTCtrInstance.startRent(_RNFT_tokenId);
         return _RNFT_tokenId;
     }
 
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
     public payable returns (uint256 totalRentPrice,uint256 _serviceFeeAmount){
-        // cases (ether native, other supported 20 tokens)
+        // add cases (ether native, other supported 20 tokens) -- h@ckk 1t-- 
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
+        // Add check for which accepted payment is made: ETH, ERC20
         ERC20 erc20CtrInstance = ERC20(_lendRecord.acceptedPaymentMethod);
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         // Rent price calculation or getRentPrice(_RNFT_tokenId)

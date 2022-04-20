@@ -31,7 +31,7 @@ interface IGateway {
     event add_lending(address lender, address nftAddress, uint256 nftId);
     event remove_lending(address lender, address nftAddress, uint256 nftId);
     event NFTOnLent(address lender,address nftAddress, uint256 original_nftId,uint128 maxDuration,uint128 minDuration,uint256 rentPricePerTimeUnit);
-    event RenterApprovedAndRNFTPreMinted(address lender,address nftAddress, uint256 original_nftId,address _RNFT_tokenId, address renter_address, uint256 rent_duration,uint256 rentPricePerTimeUnit);
+    event RenterApprovedAndRNFTPreMinted(address lender,address nftAddress, uint256 original_nftId,uint256 _RNFT_tokenId, address renter_address, uint256 rent_duration,uint256 rentPricePerTimeUnit);
 
     function createLendRecord(
         address nftAddress,
@@ -50,7 +50,7 @@ interface IGateway {
         address renter_address
     ) external returns(uint256 _rNftId);
 
-    function approveRenterRequest(address renterAddress,address nftAddress, uint256 oNftId, uint256 rentDuration) external returns (uint256);
+    function approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId) external returns (uint256);
     function confirmRentAgreementAndPay(address nftAddress,uint256 originalTokenId) external returns (uint256 _RNFT_tokenId);
     
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
@@ -62,7 +62,7 @@ interface IGateway {
     function terminateRentAgreement(address nftAddress, uint256 oNftId)external;
     function redeemNFT(address nftAddress, uint256 oNftId) external;
 
-     /** MetaRents platform settings & configuration **/
+     /** MetaRents Platform settings & configuration **/
     function setFee(uint256 fee_) external;
     function getFee() external view returns(uint256);
     function setMarketGatewayTreasury(address treasuryAddress) external;
