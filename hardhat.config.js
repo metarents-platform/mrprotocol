@@ -22,9 +22,9 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.4",
-  defaultNetwork: "rinkeby",
-  // defaultNetwork: "localGanache",
+  solidity: "0.8.10",
+  // defaultNetwork: "rinkeby",
+  defaultNetwork: "local",
   networks: {
     // hardhat: {
     //   forking: {
@@ -32,7 +32,7 @@ module.exports = {
     //   }
     // },
     
-    localGanache: {
+    local: {
       url: "http://127.0.0.1:8545",
     },
 
