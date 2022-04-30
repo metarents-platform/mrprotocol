@@ -40,6 +40,8 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
 
     // Add owner as administrator
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    // Add Proxy as administrator to delegate calls
+    // setNewAdmin(DEFAULT_ADMIN_ROLE, proxyAddress);
   }
 
   // @dev verifier to check for authorisated administrators
@@ -47,18 +49,6 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Restricted to admins");
     _;
-  }
-
-  ///@dev to add contract administrators such as the Gateway contract
-  function addAdmin(address newAdmin) external onlyOwner
-  {
-    grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
-  }
-
-  ///@dev to remove a contract administrator
-  function removeAdmin(address admin) external onlyOwner
-  {
-    _revokeRole(DEFAULT_ADMIN_ROLE, admin);
   }
 
   function onERC721Received(address, address, uint256, bytes calldata) external virtual override returns (bytes4)
@@ -147,8 +137,8 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
       // Check that the contract is approved: address(this) is RNFT contract
       require(origContract.getApproved(oTokenId) == address(this), 'Contract not approved to operate NFT');
     }
-    //Old: Mint new RNFT return RNFTtokenId
-    //New: Pre Mint: generate only a new RNFTtokenId for post-minting
+    //Old instruction: Mint new RNFT return RNFTtokenId
+    //New instruction: Pre Mint: generate only a new RNFTtokenId for post-minting
     if(RTokenId == 0){
       RTokenId = preMintRNFT();
     }
@@ -175,7 +165,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     //IERC721(addressDCL).setUpdateOperator(owner)
   }
 
-  function terminateRent(uint256 RTokenId, address caller) public virtual onlyAdmin{
+  function _terminateRent(uint256 RTokenId, address caller) public virtual onlyAdmin{
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
     require(!isRented(RTokenId),"NFT rental status: not rented");
     require(caller == _rmetadata[RTokenId].originalOwner, "Caller is not original NFT Owner");
@@ -188,7 +178,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
 
   function _redeemNFT(uint256 RTokenId, address nftAddress, uint256 oNftId, address originalNFTOwner)
   public virtual onlyAdmin{
-    terminateRent(RTokenId, originalNFTOwner);
+    _terminateRent(RTokenId, originalNFTOwner);
     // Reset Owner->RNFT mapping to 0
     _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
     delete _rmetadata[RTokenId];
@@ -199,7 +189,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     //IERC721(addressDCL).setUpdateOperator(originalNFTOwner);
   }
 
-  function _burnRNFT(uint256 _RTokenId) private{
+  function _burnRNFT(uint256 _RTokenId) private {
     _burn(_RTokenId);
   }
 
@@ -247,4 +237,20 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   {
     return super.supportsInterface(interfaceId);
   }
+
+  /** Gateway Contract Role-Based Access Control */
+
+  ///@dev to add contract administrators such as the Gateway contract
+  function _setNewAdmin(address newAdmin) external onlyOwner{
+    grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+    //emit RNFTNewAdminAdded(newAdmin);
+  }
+
+  ///@dev to remove a contract administrator
+  function _removeAdmin(address admin) external onlyOwner{
+    revokeRole(DEFAULT_ADMIN_ROLE, admin);
+    //emit RNFTAdminRemoved(admin);
+  }
+
+
 }

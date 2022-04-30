@@ -42,29 +42,33 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
     uint128 constant private WEEK_IN_SECONDS = 604800;
     uint128 constant private MONTH_IN_SECONDS = 2628000;
 
-    address private _DCL_MANATokenAddress;
+    address private ERC20_USDCAddress;
     address[] internal supportedPaymentTokens;
 
     /// @dev lending record mapping each owner to his lendings - lendRegistry
     mapping (address=>lendRecord) internal lendRegistry;
 
     uint256 private _fee; // %
-    address private _treasuryAddress;
+    address payable private _treasuryAddress;
     uint128 private _maxRentDurationLimit; // max rent duration limit 1 year
 
     /* Proxy upgradable constructor */
-    function initialize(address rNFTContractAddress_) public initializer {
+    function initialize(address rNFTContractAddress_, address payable treasuryAddress) public initializer {
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Ownable_init();
         // Add owner as administrator
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-
+        // Add Proxy as administrator to delegate calls
+        // setNewAdmin(DEFAULT_ADMIN_ROLE, proxyAddress);
         _RNFTContractAddress = rNFTContractAddress_;
-       _DCL_MANATokenAddress = address(0x0F5D2fB29fb7d3CFeE444a200298f468908cC942);
-        
-        setSupportedPaymentTokens(_DCL_MANATokenAddress);
-        // setMarketGatewayTreasury(0x00000)
+        // Set ETH & USDC as initial supported tokens after deployment
+        address etherAddress = address(0);
+        ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);
+        setSupportedPaymentTokens(etherAddress);
+        setSupportedPaymentTokens(ERC20_USDCAddress);
+        // _DCL_MANATokenAddress = address(0x0F5D2fB29fb7d3CFeE444a200298f468908cC942);
+        setMarketGatewayTreasury(treasuryAddress);
         /** Add whitelist for 1st 100 customers for discount 0% up to 1 year*/
         setFee(10); // 10% platform service fee
         _maxRentDurationLimit = 31536000;
@@ -78,8 +82,9 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
     }
 
     /// @dev check if address is owner or approved to operate NFT
-    modifier _onlyApprovedOrOwner(address operator,address nftAddress,uint256 tokenId){
+    modifier _onlyApprovedOrOwner(address nftAddress,uint256 tokenId){
         ERC721 nftCtrInstance = ERC721(nftAddress);
+        address operator = msg.sender;
         address owner = nftCtrInstance.ownerOf(tokenId);
         require(owner != address(0),"ERC721: Failed, spender query nonexistent token");
         require(operator == owner || nftCtrInstance.getApproved(tokenId) == operator || nftCtrInstance.isApprovedForAll(owner, operator),
@@ -96,7 +101,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         uint256 timeUnit,
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
-    ) public _onlyApprovedOrOwner(msg.sender,nftAddress,original_nftId){
+    ) public _onlyApprovedOrOwner(nftAddress,original_nftId){
 
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
@@ -109,7 +114,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         require(minDuration % timeUnit == 0 && maxDuration % timeUnit == 0,"duration must be in seconds; multiple of time units");
         //require(timeUnit == TimeUnit.DAY || timeUnit == TimeUnit.MONTH || timeUnit == TimeUnit.WEEK,"incorrect time unit");
         // store a new lending record metadata .
-        address owner = ERC721(nftAddress).ownerOf(original_nftId);
+        address payable owner = payable(ERC721(nftAddress).ownerOf(original_nftId));
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[original_nftId];
         _lendRecord.lender = owner;
         _lendRecord.nftAddress = nftAddress;
@@ -190,9 +195,12 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
         totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
         /** Transaction to be sent to MarketGatewaytreasury wallet */
-        _serviceFeeAmount = SafeMathUpgradeable.div(SafeMathUpgradeable.mul(totalRentPrice, _fee),1e2); // totalRentPrice * _fee / 100
+        _serviceFeeAmount = SafeMathUpgradeable.div(SafeMathUpgradeable.mul(totalRentPrice, getFee()),1e2); // totalRentPrice * _fee / 100
         // Transaction to be sent to beneficiary (NFT Lender)
         uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(totalRentPrice,_serviceFeeAmount);
+        // Ethereum case ;
+        // if (_lendRecord.acceptedPaymentMethod == address(0))
+        // uint256 _renterBalance = 
         uint256 _renterBalance = erc20CtrInstance.balanceOf(_renterAddress);
         require(_renterBalance >= totalRentPrice,"Not enough balance to execute payment transaction");
         /** Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens. */
@@ -206,7 +214,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         require(success, "Transfer 2 to treasury - failed");
     }
 
-    /// @dev to cancel a renter approval if tenant doesn't confirm and pay rent in X hours time after approval
+    /// @dev to cancel a renter approval if renter doesn't confirm and pay rent in X hours time after approval
     function cancelApproval(address nftAddress, uint256 nftId, address renterAddress)
     public returns(bool isApprovalCanceled){
         // Check if msg.sender is a registered lender and/or authorized to approve rent
@@ -229,7 +237,8 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
     }
 
     /// @dev to remove a NFT listing from the marketplace
-    function removeLending(address nftAddress, uint256 nftId) public _onlyApprovedOrOwner(msg.sender,nftAddress,nftId){
+    function removeLending(address nftAddress, uint256 nftId) public {
+        require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
         delete lendRegistry[nftAddress].lendingMap[nftId];
         emit remove_lending(msg.sender,nftAddress, nftId);
     }
@@ -241,7 +250,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        IRNFT(_RNFTContractAddress).terminateRent(_RNFT_tokenId, msg.sender);
+        IRNFT(_RNFTContractAddress)._terminateRent(_RNFT_tokenId, msg.sender);
     }
 
     /// @dev terminate rent and redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)
@@ -268,7 +277,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         return _fee;
     }
 
-    function setMarketGatewayTreasury(address treasuryAddress) public onlyAdmin{
+    function setMarketGatewayTreasury(address payable treasuryAddress) public onlyAdmin{
         _treasuryAddress = treasuryAddress;
     }
 
@@ -293,28 +302,32 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
 
     function setSupportedPaymentTokens(address tokenAddress) public onlyAdmin returns(address, string memory){
         // require(tokenAddress.supportsInterface(ERC20InterfaceId),"NOT_ERC20_TOKEN");
-        string memory tokenSymbol = ERC20(tokenAddress).symbol();
+        string memory tokenSymbol = string('ETH');
+        if(tokenAddress != address(0)){
+        tokenSymbol = ERC20(tokenAddress).symbol();
+        }
         require(!isSupportedPaymentToken(tokenAddress),"token already supported");
         supportedPaymentTokens.push(tokenAddress);
         return (tokenAddress, tokenSymbol);
     }
 
-    // function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable) returns (bool){
-    //     return super.supportsInterface(interfaceId);
-    // }
+    // Check if supported Interface implementation is correct
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable) returns (bool){
+        return super.supportsInterface(interfaceId);
+    }
 
-    /** Gateway Contract Role-based Access Control */
+    /** Gateway Contract Role-Based Access Control */
 
     ///@dev to add contract administrators such as the Proxy
     function setNewAdmin(address _newAdmin) external onlyOwner{
         grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
-        emit add_admin(_newAdmin);
+        emit NewAdminAdded(_newAdmin);
     }
 
     ///@dev to remove an existing contract administrator
     function removeAdmin(address _admin) external onlyOwner{
-        _revokeRole(DEFAULT_ADMIN_ROLE, _admin);
-        emit remove_admin(_admin);
+        revokeRole(DEFAULT_ADMIN_ROLE, _admin);
+        emit AdminRemoved(_admin);
     }
 
 }
