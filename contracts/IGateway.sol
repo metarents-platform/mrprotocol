@@ -5,7 +5,7 @@ interface IGateway {
 
     /// @dev Lending metadata
     struct Lending {
-        address lender;
+        address payable lender;
         uint256 nftId;
         address nftAddress;
         uint128 maxDuration;
@@ -26,8 +26,8 @@ interface IGateway {
     //     address beneficiary;
     // }
 
-    event add_admin(address newAdmin);
-    event remove_admin(address current_admin);
+    event NewAdminAdded(address newAdmin);
+    event AdminRemoved(address current_admin);
     event add_lending(address lender, address nftAddress, uint256 nftId);
     event remove_lending(address lender, address nftAddress, uint256 nftId);
     event NFTOnLent(address lender,address nftAddress, uint256 original_nftId,uint128 maxDuration,uint128 minDuration,uint256 rentPricePerTimeUnit);
@@ -65,7 +65,7 @@ interface IGateway {
      /** MetaRents Platform settings & configuration **/
     function setFee(uint256 fee_) external;
     function getFee() external view returns(uint256);
-    function setMarketGatewayTreasury(address treasuryAddress) external;
+    function setMarketGatewayTreasury(address payable treasuryAddress) external;
     function setMaxRentDurationLimit(uint128 mdl) external;
     function getSupportedPaymentTokens() external view returns(address[] memory);
     function isSupportedPaymentToken(address tokenAddress) external view returns(bool);
