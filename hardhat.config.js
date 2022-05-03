@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+require('@openzeppelin/hardhat-upgrades');
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
@@ -22,18 +23,32 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.10",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.10",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 20
+          }
+        }
+      },
+    ],
+  },
   // defaultNetwork: "rinkeby",
   defaultNetwork: "local",
   networks: {
-    // hardhat: {
-    //   forking: {
-    //     url: "https://eth-mainnet.alchemyapi.io/v2/4Nu360lG-eoGjVS3kzRAGHVtGScbOYVv",
-    //   }
-    // },
+    hardhat: {
+      forking: {
+        url: process.env.RINKEBY_URL,
+        allowUnlimitedContractSize: true
+      }
+    },
     
     local: {
       url: "http://127.0.0.1:8545",
+      allowUnlimitedContractSize: true,
     },
 
     ethereum: {

@@ -7,10 +7,12 @@
 pragma solidity ^0.8.0;
 
 /* ERC token contracts */
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+// import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 //  Proxy upgradable contracts
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -27,7 +29,7 @@ import "./IGateway.sol";
 
 
 contract Gateway is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable,
-OwnableUpgradeable, IGateway, ERC20Upgradeable{
+OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /** RNFT Contract Address for Inter-Contract Execution */
     address internal _RNFTContractAddress;
@@ -64,7 +66,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         _RNFTContractAddress = rNFTContractAddress_;
         // Set ETH & USDC as initial supported tokens after deployment
         address etherAddress = address(0);
-        ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);
+        ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);    // rinkeby
         setSupportedPaymentTokens(etherAddress);
         setSupportedPaymentTokens(ERC20_USDCAddress);
         // _DCL_MANATokenAddress = address(0x0F5D2fB29fb7d3CFeE444a200298f468908cC942);
@@ -83,7 +85,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
 
     /// @dev check if address is owner or approved to operate NFT
     modifier _onlyApprovedOrOwner(address nftAddress,uint256 tokenId){
-        ERC721 nftCtrInstance = ERC721(nftAddress);
+        IERC721 nftCtrInstance = IERC721(nftAddress);
         address operator = msg.sender;
         address owner = nftCtrInstance.ownerOf(tokenId);
         require(owner != address(0),"ERC721: Failed, spender query nonexistent token");
@@ -114,7 +116,7 @@ OwnableUpgradeable, IGateway, ERC20Upgradeable{
         require(minDuration % timeUnit == 0 && maxDuration % timeUnit == 0,"duration must be in seconds; multiple of time units");
         //require(timeUnit == TimeUnit.DAY || timeUnit == TimeUnit.MONTH || timeUnit == TimeUnit.WEEK,"incorrect time unit");
         // store a new lending record metadata .
-        address payable owner = payable(ERC721(nftAddress).ownerOf(original_nftId));
+        address payable owner = payable(IERC721(nftAddress).ownerOf(original_nftId));
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[original_nftId];
         _lendRecord.lender = owner;
         _lendRecord.nftAddress = nftAddress;
