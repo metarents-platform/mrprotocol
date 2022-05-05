@@ -80,14 +80,14 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     beforeEach(async () => {});
 
     it("Should be reverted with message 'Only owner or operator is allowed' unless you're the owner/operator", async () => {
-      expect(
+      await expect(
         gateway
           .connect(other) // sign the txn with another wallet
           .createLendRecord(
             NFT_ADDRESS,
             ORIGINAL_NFT_ID,
-            MAX_DURATION,
-            MIN_DURATION,
+            MAX_DURATION * ONE_MONTH,
+            MIN_DURATION * ONE_MONTH,
             ONE_MONTH,
             RENT_PRICE_PER_TIMEUNIT,
             ETH_ADDRESS
@@ -96,12 +96,12 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should be reverted with message 'invalid time unit' in case of wrong time-unit", async () => {
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION,
-          MIN_DURATION,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
           ONE_MONTH + 1, // time-unit
           RENT_PRICE_PER_TIMEUNIT,
           ETH_ADDRESS
@@ -110,23 +110,23 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should be reverted with message 'max or min duration should be > 0' in case any of min/max duration is not positive", async () => {
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
           0, // max duration
-          MIN_DURATION,
+          MIN_DURATION * ONE_MONTH,
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
           ETH_ADDRESS
         )
       ).to.be.revertedWith("max or min duration should be > 0");
 
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION,
+          MAX_DURATION * ONE_MONTH,
           0, // min duration
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
@@ -136,12 +136,12 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should be reverted with message 'invalid duration' in case min > max", async () => {
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION, // max duration
-          MAX_DURATION + 1, // min duration
+          MAX_DURATION * ONE_MONTH, // max duration
+          MAX_DURATION * ONE_MONTH + 1, // min duration
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
           ETH_ADDRESS
@@ -150,12 +150,12 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should be reverted with message 'max rent duration exceeds allowed limit' if max duration exceeds 1 year", async () => {
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          13, // max duration ; limit is 1 year => 13 months is not allowed
-          MIN_DURATION,
+          13 * ONE_MONTH, // max duration ; limit is 1 year => 13 months is not allowed
+          MIN_DURATION * ONE_MONTH,
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
           ETH_ADDRESS
@@ -163,14 +163,44 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
       ).to.be.revertedWith("max rent duration exceeds allowed limit");
     });
 
-    it("Should be reverted with message 'ERC20 Token not supported as payment method by market gateway' if the token is not supported", async () => {
-      const LANDMiniMeToken = "0x576c4577aAd561EA79acbd49215a0cC1473BfCCA"; // rinkeby
-      expect(
+    it("Should be reverted with message 'duration must be in seconds; multiple of time units' if the token is not supported", async () => {
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION,
-          MIN_DURATION,
+          MAX_DURATION * ONE_MONTH + 1,
+          MIN_DURATION * ONE_MONTH,
+          ONE_MONTH,
+          RENT_PRICE_PER_TIMEUNIT,
+          ETH_ADDRESS
+        )
+      ).to.be.revertedWith(
+        "duration must be in seconds; multiple of time units"
+      );
+
+      await expect(
+        gateway.createLendRecord(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH + 1,
+          ONE_MONTH,
+          RENT_PRICE_PER_TIMEUNIT,
+          ETH_ADDRESS
+        )
+      ).to.be.revertedWith(
+        "duration must be in seconds; multiple of time units"
+      );
+    });
+
+    it("Should be reverted with message 'ERC20 Token not supported as payment method by market gateway' if the token is not supported", async () => {
+      const LANDMiniMeToken = "0x576c4577aAd561EA79acbd49215a0cC1473BfCCA"; // rinkeby
+      await expect(
+        gateway.createLendRecord(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
           LANDMiniMeToken
@@ -181,12 +211,12 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should work fine with the event 'NFT_Listed' emitted", async () => {
-      expect(
+      await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION,
-          MIN_DURATION,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
           ONE_MONTH,
           RENT_PRICE_PER_TIMEUNIT,
           ETH_ADDRESS
@@ -197,8 +227,8 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
           owner.address,
           NFT_ADDRESS,
           ORIGINAL_NFT_ID,
-          MAX_DURATION,
-          MIN_DURATION,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
           ETH_ADDRESS
         );
     });

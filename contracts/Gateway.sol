@@ -249,7 +249,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /// @dev to get Lending information based on the nftAddress and tokenID
     function getLending(address nftAddress,uint256 nftId) public view returns (Lending memory lendingData){
-        lendingData = lendRegistry[nftAddress].lendingMap[nftId];
+        return lendRegistry[nftAddress].lendingMap[nftId];
     }
 
     /// @dev to remove a NFT listing from the marketplace
