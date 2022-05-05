@@ -55,7 +55,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     uint128 private _maxRentDurationLimit; // max rent duration limit 1 year
 
     // < events newly added
-    event NFT_Listed(address lender, address nftAddress, uint nftId, uint maxDuration, uint minDuration, address acceptedPaymentMethod);
+    event NFT_Lending_Added(address lender, address nftAddress, uint nftId, uint maxDuration, uint minDuration, address acceptedPaymentMethod);
+    event NFT_Lending_Removed(address lender, address nftAddress, uint nftId);
     // events newly added !>
 
     /* Proxy upgradable constructor */
@@ -135,7 +136,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         _lendRecord.rentPricePerTimeUnit = _rentPricePerTimeUnit; // supplied per second (day/week/month)
         _lendRecord.acceptedPaymentMethod = _paymentMethod;
         
-        emit NFT_Listed(
+        emit NFT_Lending_Added(
             _lendRecord.lender,
             _lendRecord.nftAddress,
             _lendRecord.nftId, 
@@ -256,7 +257,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     function removeLending(address nftAddress, uint256 nftId) public {
         require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
         delete lendRegistry[nftAddress].lendingMap[nftId];
-        emit remove_lending(msg.sender,nftAddress, nftId);
+        emit NFT_Lending_Removed(msg.sender,nftAddress, nftId);
     }
 
      // @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)

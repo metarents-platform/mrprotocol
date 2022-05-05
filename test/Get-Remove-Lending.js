@@ -47,7 +47,6 @@ const compareTwoObjects = (obj1, obj2) => {
   for (let i = 0; i < key1.length; i++) {
     const k1 = key1[i];
     const k2 = key2[i];
-    console.log(k1, k2, obj1[k1], obj2[k2]);
     if (k1 !== k2) return false;
     // if (obj1[k1].toString() !== obj2[k2].toString()) return false;
     if (parseInt(obj1[k1], 16) !== parseInt(obj2[k2], 16)) return false;
@@ -89,7 +88,7 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
   });
 
   describe("READ lending metadata from Market Gateway contract", () => {
-    it("Should return undefined if the NFT is not listed for Lending yet", async () => {
+    it("Should return an empty lending data if the NFT is not listed for Lending yet", async () => {
       const returnValue = await gateway.getLending(
         NFT_ADDRESS,
         ORIGINAL_NFT_ID
@@ -112,8 +111,8 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
       await gateway.createLendRecord(
         NFT_ADDRESS,
         ORIGINAL_NFT_ID,
-        MAX_DURATION,
-        MIN_DURATION,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
         ONE_MONTH,
         RENT_PRICE_PER_TIMEUNIT,
         ETH_ADDRESS
@@ -124,6 +123,109 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
         ORIGINAL_NFT_ID
       );
 
+      const expectedValue = {
+        lender: owner.address,
+        nftId: ORIGINAL_NFT_ID,
+        nftAddress: NFT_ADDRESS,
+        maxDuration: MAX_DURATION * ONE_MONTH,
+        minDuration: MIN_DURATION * ONE_MONTH,
+        timeUnit: ONE_MONTH,
+        rentPricePerTimeUnit: RENT_PRICE_PER_TIMEUNIT,
+        acceptedPaymentMethod: ETH_ADDRESS,
+      };
+      // eslint-disable-next-line no-unused-expressions
+      expect(compareTwoObjects(returnValue, expectedValue)).to.be.true;
+    });
+
+    it("Should return the lending metadata though others ask", async () => {
+      await gateway.createLendRecord(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
+        ONE_MONTH,
+        RENT_PRICE_PER_TIMEUNIT,
+        ETH_ADDRESS
+      );
+
+      const returnValue = await gateway
+        .connect(other)
+        .getLending(NFT_ADDRESS, ORIGINAL_NFT_ID);
+
+      const expectedValue = {
+        lender: owner.address,
+        nftId: ORIGINAL_NFT_ID,
+        nftAddress: NFT_ADDRESS,
+        maxDuration: MAX_DURATION * ONE_MONTH,
+        minDuration: MIN_DURATION * ONE_MONTH,
+        timeUnit: ONE_MONTH,
+        rentPricePerTimeUnit: RENT_PRICE_PER_TIMEUNIT,
+        acceptedPaymentMethod: ETH_ADDRESS,
+      };
+      // eslint-disable-next-line no-unused-expressions
+      expect(compareTwoObjects(returnValue, expectedValue)).to.be.true;
+    });
+  });
+
+  describe("Remove lending metadata from Market Gateway contract", () => {
+    it("Should be reverted with message 'unauthorized: address is not owner or lending not registered' if the NFT is not listed for Lending yet", async () => {
+      await expect(
+        gateway.removeLending(NFT_ADDRESS, ORIGINAL_NFT_ID)
+      ).to.be.revertedWith(
+        "unauthorized: address is not owner or lending not registered"
+      );
+    });
+
+    it("Should be reverted with message 'unauthorized: address is not owner or lending not registered' if others try to remove", async () => {
+      await gateway.createLendRecord(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
+        ONE_MONTH,
+        RENT_PRICE_PER_TIMEUNIT,
+        ETH_ADDRESS
+      );
+
+      await expect(
+        gateway.connect(other).removeLending(NFT_ADDRESS, ORIGINAL_NFT_ID)
+      ).to.be.revertedWith(
+        "unauthorized: address is not owner or lending not registered"
+      );
+    });
+
+    it("Should emit the event 'NFT_Lending_Removed' if the owner/lender tries to remove", async () => {
+      await gateway.createLendRecord(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
+        ONE_MONTH,
+        RENT_PRICE_PER_TIMEUNIT,
+        ETH_ADDRESS
+      );
+
+      await expect(gateway.removeLending(NFT_ADDRESS, ORIGINAL_NFT_ID))
+        .to.emit(gateway, "NFT_Lending_Removed")
+        .withArgs(owner.address, NFT_ADDRESS, ORIGINAL_NFT_ID);
+    });
+
+    it("Should return undefined/empty lending data after removal", async () => {
+      await gateway.createLendRecord(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
+        ONE_MONTH,
+        RENT_PRICE_PER_TIMEUNIT,
+        ETH_ADDRESS
+      );
+      await gateway.removeLending(NFT_ADDRESS, ORIGINAL_NFT_ID);
+
+      const returnValue = await gateway.getLending(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID
+      );
       const emptyLending = {
         lender: "0x0000000000000000000000000000000000000000",
         nftId: 0,

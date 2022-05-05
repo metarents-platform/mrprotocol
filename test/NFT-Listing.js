@@ -222,7 +222,7 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
           ETH_ADDRESS
         )
       )
-        .to.emit(gateway, "NFT_Listed")
+        .to.emit(gateway, "NFT_Lending_Added")
         .withArgs(
           owner.address,
           NFT_ADDRESS,
