@@ -54,6 +54,10 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     address payable private _treasuryAddress;
     uint128 private _maxRentDurationLimit; // max rent duration limit 1 year
 
+    // < events newly added
+    event NFT_Listed(address lender, address nftAddress, uint nftId, uint maxDuration, uint minDuration, address acceptedPaymentMethod);
+    // events newly added !>
+
     /* Proxy upgradable constructor */
     function initialize(address rNFTContractAddress_, address payable treasuryAddress) public initializer {
         __AccessControl_init();
@@ -89,8 +93,11 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         address operator = msg.sender;
         address owner = nftCtrInstance.ownerOf(tokenId);
         require(owner != address(0),"ERC721: Failed, spender query nonexistent token");
-        require(operator == owner || nftCtrInstance.getApproved(tokenId) == operator || nftCtrInstance.isApprovedForAll(owner, operator),
-        "Only owner or operator is allowed");
+        require(
+            operator == owner ||
+            nftCtrInstance.getApproved(tokenId) == operator || 
+            nftCtrInstance.isApprovedForAll(owner, operator),
+            "Only owner or operator is allowed");
         _;
     }
 
@@ -103,19 +110,20 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 timeUnit,
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
-    ) public _onlyApprovedOrOwner(nftAddress,original_nftId){
+    ) public _onlyApprovedOrOwner(nftAddress, original_nftId){
 
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
         require(timeUnit == DAY_IN_SECONDS || timeUnit == WEEK_IN_SECONDS || timeUnit == MONTH_IN_SECONDS,"invalid time unit");
         require(minDuration > 0 && maxDuration > 0, "max or min duration should be > 0");
-        require(maxDuration > minDuration,"invalid duration");
-        //require(maxDuration < block.timestamp,"invalid maxDuration");
+        require(maxDuration >= minDuration,"invalid duration");
         // check if maxDuration exceeds marketplace maxDuration limit
         require(maxDuration <= _maxRentDurationLimit,"max rent duration exceeds allowed limit");
         require(minDuration % timeUnit == 0 && maxDuration % timeUnit == 0,"duration must be in seconds; multiple of time units");
-        //require(timeUnit == TimeUnit.DAY || timeUnit == TimeUnit.MONTH || timeUnit == TimeUnit.WEEK,"incorrect time unit");
+        // Add supported token(s) (ETH, USDC, MANA) TBC - check if supported by the marketplace contract and owner
+        require(isSupportedPaymentToken(_paymentMethod),"ERC20 Token not supported as payment method by market gateway");
         // store a new lending record metadata .
+
         address payable owner = payable(IERC721(nftAddress).ownerOf(original_nftId));
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[original_nftId];
         _lendRecord.lender = owner;
@@ -124,11 +132,17 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         _lendRecord.maxDuration = maxDuration;
         _lendRecord.minDuration = minDuration;
         _lendRecord.timeUnit = timeUnit;
-        _lendRecord.rentPricePerTimeUnit = _rentPricePerTimeUnit; // supplied per second
-        // Add supported token(s) (ETH, USDC, MANA) TBC - check if supported by the marketplace contract and owner
-        require(isSupportedPaymentToken(_paymentMethod),"ERC20 Token not supported as payment method by market gateway");
+        _lendRecord.rentPricePerTimeUnit = _rentPricePerTimeUnit; // supplied per second (day/week/month)
         _lendRecord.acceptedPaymentMethod = _paymentMethod;
-        emit NFTOnLent(owner,nftAddress, original_nftId, maxDuration,minDuration,_rentPricePerTimeUnit);
+        
+        emit NFT_Listed(
+            _lendRecord.lender,
+            _lendRecord.nftAddress,
+            _lendRecord.nftId, 
+            _lendRecord.maxDuration,
+            _lendRecord.minDuration,
+            _lendRecord.acceptedPaymentMethod
+        );
     }
 
     /// @dev invoke RNFT Contract to approve renter and pre-mint new RNFT (rentNFT)

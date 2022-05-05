@@ -1,6 +1,7 @@
 require("dotenv").config();
 
-require('@openzeppelin/hardhat-upgrades');
+// eslint-disable-next-line node/no-extraneous-require
+require("@openzeppelin/hardhat-upgrades");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
@@ -30,9 +31,9 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 20
-          }
-        }
+            runs: 20,
+          },
+        },
       },
     ],
   },
@@ -42,30 +43,40 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.RINKEBY_URL,
-        allowUnlimitedContractSize: true
-      }
+        allowUnlimitedContractSize: true,
+      },
     },
-    
     local: {
       url: "http://127.0.0.1:8545",
       allowUnlimitedContractSize: true,
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
 
     ethereum: {
       url: process.env.ETHEREUM_URL || "",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
     goerli: {
       url: process.env.GOERLI_URL || "",
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
   },
   gasReporter: {
@@ -73,7 +84,7 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
+    apiKey: process.env.ETHERSCAN_API_KEY,
     // apiKey: process.env.BSCSCAN_API_KEY,
     // apiKey: process.env.SHOWTRACE_API_KEY
   },
@@ -81,22 +92,22 @@ module.exports = {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts"
+    artifacts: "./artifacts",
   },
   chai: {
     enableTimeouts: false,
     timeout: 200000,
-    before_timeout: 120000 // Here is 2min but can be whatever timeout is suitable for you.
+    before_timeout: 120000, // Here is 2min but can be whatever timeout is suitable for you.
   },
   mocha: {
     enableTimeouts: false,
     timeout: 200000,
-    before_timeout: 120000 // Here is 2min but can be whatever timeout is suitable for you.
+    before_timeout: 120000, // Here is 2min but can be whatever timeout is suitable for you.
   },
   contractSizer: {
     alphaSort: true,
     disambiguatePaths: false,
     runOnCompile: true,
-    strict: true
+    strict: true,
   },
 };
