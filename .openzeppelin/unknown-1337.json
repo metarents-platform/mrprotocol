@@ -175,7 +175,7 @@
             "label": "_maxRentDurationLimit",
             "offset": 0,
             "slot": "257",
-            "type": "t_uint128",
+            "type": "t_uint256",
             "contract": "Gateway",
             "src": "contracts/Gateway.sol:53"
           }
@@ -260,13 +260,13 @@
               },
               {
                 "label": "maxDuration",
-                "type": "t_uint128",
+                "type": "t_uint256",
                 "offset": 0,
                 "slot": "3"
               },
               {
                 "label": "minDuration",
-                "type": "t_uint128",
+                "type": "t_uint256",
                 "offset": 16,
                 "slot": "3"
               },
@@ -321,8 +321,8 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_uint128": {
-            "label": "uint128",
+          "t_uint256": {
+            "label": "uint256",
             "numberOfBytes": "16"
           },
           "t_uint256": {

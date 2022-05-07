@@ -1,4 +1,3 @@
-const { AlchemyWebSocketProvider } = require("@ethersproject/providers");
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
@@ -57,7 +56,7 @@ const compareTwoObjects = (obj1, obj2) => {
 describe("READ/DELETE lending metadata from Market Gateway contract", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, other, treasury, addrs;
+  let owner, other, treasury;
 
   const NFT_ADDRESS = "0xF8764D543ae563A0B42761DCd31bE102603b722E"; // Smol Runners
   const ORIGINAL_NFT_ID = 1;

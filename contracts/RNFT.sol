@@ -5,13 +5,15 @@
 /// @title RNFT Contract
 /// @dev RNFT Contract is an ERC-721 implementation to manage lender RentNFTs (RNFTs) and rent operations
 
+import "hardhat/console.sol";
+
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
+// import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -30,6 +32,11 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   mapping(address => mapping(address => mapping(uint256 => uint256))) private _OwnerRTokenID;
   // RTokenId -> Renting
   mapping(uint256 => IRNFT.Renting) private _rmetadata;
+
+  // < events newly added
+  event Metadata_Generated(address owner/*, address nftAddress, uint256 originalTokenId*/, uint256 rTokenId);
+  event Renter_Approved(uint256 _RTokenId, address approvedRenter, uint256 approvedRentPeriod, uint256 rentPrice, bool isRented);
+  // events newly added !>
 
 
   function initialize() public initializer {
@@ -64,19 +71,29 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     uint256 _RTokenId) external onlyAdmin returns (uint256){
 
     // Calculate the approved rent period in seconds
-    uint256 approvedRentPeriod = SafeMathUpgradeable.mul(timeUnitSec,rentDuration);
+    // uint256 approvedRentPeriod = SafeMathUpgradeable.mul(timeUnitSec,rentDuration);
+    uint256 approvedRentPeriod = rentDuration;
 
     // Check if the time limit is respected
     //require(approvedRentPeriod <= SafeMathUpgradeable.mul(timeUnitSec, maxTimeUnits), 'Approved period is longer than the limit');
 
     // Calculate the renting price
-    uint256 rentingPrice = SafeMathUpgradeable.mul(rentDuration, timeUnitPrice);
+    // uint256 rentingPrice = SafeMathUpgradeable.mul(rentDuration, timeUnitPrice);
+    uint256 rentingPrice = SafeMathUpgradeable.mul(SafeMathUpgradeable.div(rentDuration, timeUnitSec), timeUnitPrice);
 
     // Set the metadata
     _rmetadata[_RTokenId].isRented = false;
-    _rmetadata[_RTokenId].rentPrice = SafeCastUpgradeable.toUint128(rentingPrice);
-    _rmetadata[_RTokenId].approvedRentPeriod = SafeCastUpgradeable.toUint128(approvedRentPeriod);
+    _rmetadata[_RTokenId].rentPrice = rentingPrice;
+    _rmetadata[_RTokenId].approvedRentPeriod = approvedRentPeriod;
     _rmetadata[_RTokenId].approvedRenter = approvedRenter;
+
+    emit Renter_Approved(
+      _RTokenId,
+      _rmetadata[_RTokenId].approvedRenter,
+      _rmetadata[_RTokenId].approvedRentPeriod,
+      _rmetadata[_RTokenId].rentPrice,
+      _rmetadata[_RTokenId].isRented
+    );
 
     // Return the RNFT token ID to the caller
     return _RTokenId;
@@ -112,7 +129,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   // setter function to store initial rent metadata (owner, nftAddress, oNftId)
   function initializeRentMetadata(address originalOwner, address nftAddress,uint256 oTokenId) external returns (uint256) {
     // initialise RNFT Token ID
-    uint256 RTokenId = _OwnerRTokenID[nftAddress][originalOwner][oTokenId];
+    uint256 RTokenId = _OwnerRTokenID[originalOwner][nftAddress][oTokenId];
     // Create an instance of the original NFT's contract
     IERC721 origContract = IERC721(nftAddress);
     address _tokenOwner = origContract.ownerOf(oTokenId);
@@ -133,12 +150,13 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     {
       // Check that lender owns the NFT
       require(originalOwner == _tokenOwner, 'Not the NFT owner');
-
+      
       // Check that the contract is approved: address(this) is RNFT contract
       require(origContract.getApproved(oTokenId) == address(this), 'Contract not approved to operate NFT');
     }
     //Old instruction: Mint new RNFT return RNFTtokenId
     //New instruction: Pre Mint: generate only a new RNFTtokenId for post-minting
+    console.log(RTokenId);
     if(RTokenId == 0){
       RTokenId = preMintRNFT();
     }
@@ -149,6 +167,13 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     // _rmetadata[RTokenId].nftAddress = nftAddress;
     // _rmetadata[RTokenId].oTokenId = oTokenId;
 
+    emit Metadata_Generated(
+      _rmetadata[RTokenId].originalOwner,
+      // _rmetadata[RTokenId].nftAddress,
+      // _rmetadata[RTokenId].oTokenId,
+      _OwnerRTokenID[nftAddress][originalOwner][oTokenId]
+    );
+
     return RTokenId;
   }
 
@@ -157,7 +182,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     // initiateRent()
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
     require(isRented(RTokenId),"NFT rental status: already rented");
-    uint128 _now = SafeCastUpgradeable.toUint128(block.timestamp);
+    uint256 _now = block.timestamp;
     _rmetadata[RTokenId].rStartTime = _now;
     _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
     _rmetadata[RTokenId].isRented = true;
@@ -221,11 +246,11 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     return _rmetadata[RTokenId].mintNonce;
   }
 
-  function getRentPrice(uint RTokenId) public view returns (uint128){
+  function getRentPrice(uint RTokenId) public view returns (uint256){
     return _rmetadata[RTokenId].rentPrice;
   }
 
-  function getApprovedRentPeriod(uint RTokenId) public view returns (uint128){
+  function getApprovedRentPeriod(uint RTokenId) public view returns (uint256){
     return _rmetadata[RTokenId].approvedRentPeriod;
   }
 

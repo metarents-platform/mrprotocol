@@ -11,13 +11,13 @@ interface IRNFT {
         // The address of the approved renter
         address approvedRenter;
         // Total price of the rent period
-        uint128 rentPrice;
+        uint256 rentPrice;
         // Approved rent period in seconds
-        uint128 approvedRentPeriod;
+        uint256 approvedRentPeriod;
         // The rent start time (once RNFT is minted and payment is done)
-        uint128 rStartTime;
+        uint256 rStartTime;
         // The rent end time (checked at redeem and )
-        uint128 rEndTime;
+        uint256 rEndTime;
         // nonce to check if RNFT is minted or not
         bool mintNonce;
     }
@@ -40,8 +40,8 @@ interface IRNFT {
     function isApprovedRenter(address renter, uint256 RTokenId) external view returns (bool);
     function isRented(uint256 RTokenId) external view returns (bool);
     function isMinted(uint RTokenId) external view returns (bool);
-    function getRentPrice(uint RTokenId) external view returns (uint128);
-    function getApprovedRentPeriod(uint RTokenId) external view returns (uint128);
+    function getRentPrice(uint RTokenId) external view returns (uint256);
+    function getApprovedRentPeriod(uint RTokenId) external view returns (uint256);
     function getApprovedRenter(uint RTokenId) external view returns (address);
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
     
