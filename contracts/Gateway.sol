@@ -59,6 +59,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     event NFT_Lending_Removed(address lender, address nftAddress, uint nftId);
     event Renter_Request_Approved(address lender, address nftAddress, uint256 oNftId, uint256 _RNFT_tokenId, address renter, uint256 rentDuration, uint256 rentPricePerTimeUnit);
     event RenterApproved_And_RNFTPreMinted(address lender, address renter, address nftAddress, uint256 originalNFTId, uint256 rNFTId, uint256 rentDuration);
+    event Approval_Canceled(address nftAddress, address ownerAddress, uint256 nftId, address renterAddress, uint256 rNFTId);
     // events newly added !>
 
     /* Proxy upgradable constructor */
@@ -245,10 +246,12 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,msg.sender,nftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        require(rNFTCtrInstance.isApprovedRenter(renterAddress,_RNFT_tokenId)," renter address is not approved");
+        require(rNFTCtrInstance.isApprovedRenter(renterAddress,_RNFT_tokenId),"renter address is not approved");
         require(!rNFTCtrInstance.isRented(_RNFT_tokenId),"NFT rental status: already rented");
         // call clearApprovalState to delete RNFTMetadata metadata key: _RtokenIds.current();
         isApprovalCanceled = rNFTCtrInstance.clearRNFTState(_RNFT_tokenId);
+        if (isApprovalCanceled)
+            emit Approval_Canceled(nftAddress, msg.sender, nftId, renterAddress, _RNFT_tokenId);
         return isApprovalCanceled;
     }
 
