@@ -36,6 +36,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   // < events newly added
   event Metadata_Generated(address owner/*, address nftAddress, uint256 originalTokenId*/, uint256 rTokenId);
   event Renter_Approved(uint256 _RTokenId, address approvedRenter, uint256 approvedRentPeriod, uint256 rentPrice, bool isRented);
+  event RNFT_minted(address originalOwner, address nftAddress, uint256 oTokenId, uint256 _RTokenId);
   // events newly added !>
 
 
@@ -80,7 +81,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     // Calculate the renting price
     // uint256 rentingPrice = SafeMathUpgradeable.mul(rentDuration, timeUnitPrice);
     uint256 rentingPrice = SafeMathUpgradeable.mul(SafeMathUpgradeable.div(rentDuration, timeUnitSec), timeUnitPrice);
-
+    
     // Set the metadata
     _rmetadata[_RTokenId].isRented = false;
     _rmetadata[_RTokenId].rentPrice = rentingPrice;
@@ -122,6 +123,8 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     _safeMint(address(this), _RTokenId);
 
     _rmetadata[_RTokenId].mintNonce = true;
+
+    emit RNFT_minted(originalOwner, nftAddress, oTokenId, _RTokenId);
 
     return _RTokenId;
   }
@@ -187,7 +190,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
     _rmetadata[RTokenId].isRented = true;
     // grant renter with DCL Operator rights
-    //IERC721(addressDCL).setUpdateOperator(owner)
+    //IERC721(addressDCL).setUpdateOperator(renter)
   }
 
   function _terminateRent(uint256 RTokenId, address caller) public virtual onlyAdmin{
