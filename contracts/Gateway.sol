@@ -60,6 +60,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     event Renter_Request_Approved(address lender, address nftAddress, uint256 oNftId, uint256 _RNFT_tokenId, address renter, uint256 rentDuration, uint256 rentPricePerTimeUnit);
     event RenterApproved_And_RNFTPreMinted(address lender, address renter, address nftAddress, uint256 originalNFTId, uint256 rNFTId, uint256 rentDuration);
     event Approval_Canceled(address nftAddress, address ownerAddress, uint256 nftId, address renterAddress, uint256 rNFTId);
+    event Payment_Distributed(uint256 rTokenId, uint256 totalRentPrice, uint256 serviceFee, uint256 rentPriceAfterFee, uint256 changeAfterPayment);
+    event Supported_Payment_Method_Added(address tokenAddress, string tokenSymbol);
     // events newly added !>
 
     /* Proxy upgradable constructor */
@@ -193,7 +195,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, _lender, originalTokenId);
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        require(rNFTCtrInstance.isApprovedRenter(renterAddress, _RNFT_tokenId), "renter address not approved");
+        require(rNFTCtrInstance.isApprovedRenter(renterAddress, _RNFT_tokenId), "Renter address not approved");
         require(!rNFTCtrInstance.isRented(_RNFT_tokenId), "NFT rental status: already rented");
         if(!rNFTCtrInstance.isMinted(_RNFT_tokenId)){
             // Mint RNFT with specific time duration for rent purpose and save Rent metadata
@@ -219,6 +221,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         _serviceFeeAmount = SafeMathUpgradeable.div(SafeMathUpgradeable.mul(totalRentPrice, getFee()),1e2); // totalRentPrice * _fee / 100
         // Transaction to be sent to beneficiary (NFT Lender)
         uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(totalRentPrice,_serviceFeeAmount);
+        // Change (in case of ETH) remained after payment
+        uint256 changeAfterPayment = 0;
 
 
         bool success = false;
@@ -231,8 +235,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             require(success, "Transfer 1 to lender (beneficiary) - failed");
             // Send changes back to the renter
             if (totalRentPrice < msg.value) {
-                uint256 change = SafeMathUpgradeable.sub(msg.value, totalRentPrice);
-                (success, ) = payable(_renterAddress).call{value: change}("");
+                changeAfterPayment = SafeMathUpgradeable.sub(msg.value, totalRentPrice);
+                (success, ) = payable(_renterAddress).call{value: changeAfterPayment}("");
                 require(success, "Transfer 2 to renter (changes) - failed");
             }
         } else {    // ERC20
@@ -249,9 +253,11 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             success = erc20CtrInstance.transferFrom(_renterAddress, _lendRecord.lender, rentPriceAfterFee);
             require(success, "Transfer 1 to lender (beneficiary) - failed");
             // Send `_serviceFeeAmount` tokens from `render wallet address` to `MetaRents Treasury DAO Address` using the allowance mechanism.
-            success = erc20CtrInstance.transferFrom(_renterAddress,_treasuryAddress,_serviceFeeAmount);
+            success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress,_serviceFeeAmount);
             require(success, "Transfer 2 to treasury - failed");
         }
+
+        emit Payment_Distributed(_RNFT_tokenId, totalRentPrice, _serviceFeeAmount, rentPriceAfterFee, changeAfterPayment);
     }
 
     /// @dev to cancel a renter approval if renter doesn't confirm and pay rent in X hours time after approval
@@ -315,7 +321,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         _fee = fee_;
     }
 
-    function getFee() public view onlyAdmin returns(uint256){
+    function getFee() public view returns(uint256){
         return _fee;
     }
 
@@ -348,8 +354,9 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         if(tokenAddress != address(0)){
         tokenSymbol = ERC20(tokenAddress).symbol();
         }
-        require(!isSupportedPaymentToken(tokenAddress),"token already supported");
+        require(!isSupportedPaymentToken(tokenAddress), "token already supported");
         supportedPaymentTokens.push(tokenAddress);
+        emit Supported_Payment_Method_Added(tokenAddress, tokenSymbol);
         return (tokenAddress, tokenSymbol);
     }
 

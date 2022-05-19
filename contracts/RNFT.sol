@@ -36,7 +36,8 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   // < events newly added
   event Metadata_Generated(address owner/*, address nftAddress, uint256 originalTokenId*/, uint256 rTokenId);
   event Renter_Approved(uint256 _RTokenId, address approvedRenter, uint256 approvedRentPeriod, uint256 rentPrice, bool isRented);
-  event RNFT_minted(address originalOwner, address nftAddress, uint256 oTokenId, uint256 _RTokenId);
+  event RNFT_Minted(address originalOwner, address nftAddress, uint256 oTokenId, uint256 _RTokenId);
+  event Rent_Started(uint256 rTokenId, uint256 rStartTime, uint256 rEndTime, bool isRented);
   // events newly added !>
 
 
@@ -124,7 +125,7 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
 
     _rmetadata[_RTokenId].mintNonce = true;
 
-    emit RNFT_minted(originalOwner, nftAddress, oTokenId, _RTokenId);
+    emit RNFT_Minted(originalOwner, nftAddress, oTokenId, _RTokenId);
 
     return _RTokenId;
   }
@@ -159,7 +160,6 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
     }
     //Old instruction: Mint new RNFT return RNFTtokenId
     //New instruction: Pre Mint: generate only a new RNFTtokenId for post-minting
-    console.log(RTokenId);
     if(RTokenId == 0){
       RTokenId = preMintRNFT();
     }
@@ -184,18 +184,20 @@ ERC721BurnableUpgradeable, AccessControlUpgradeable, OwnableUpgradeable {
   function startRent(uint256 RTokenId) external virtual onlyAdmin{
     // initiateRent()
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
-    require(isRented(RTokenId),"NFT rental status: already rented");
+    require(!isRented(RTokenId), "NFT rental status: already rented");
     uint256 _now = block.timestamp;
     _rmetadata[RTokenId].rStartTime = _now;
     _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
     _rmetadata[RTokenId].isRented = true;
-    // grant renter with DCL Operator rights
+    // grant renter with DCL Operator rightsa
     //IERC721(addressDCL).setUpdateOperator(renter)
+
+    emit Rent_Started(RTokenId, _rmetadata[RTokenId].rStartTime, _rmetadata[RTokenId].rEndTime, _rmetadata[RTokenId].isRented);
   }
 
   function _terminateRent(uint256 RTokenId, address caller) public virtual onlyAdmin{
     require(RTokenId != 0, "RNFT Token ID doesn't exist");
-    require(!isRented(RTokenId),"NFT rental status: not rented");
+    require(isRented(RTokenId),"NFT rental status: not rented");
     require(caller == _rmetadata[RTokenId].originalOwner, "Caller is not original NFT Owner");
     // check if rent duration is due
     require(block.timestamp >= _rmetadata[RTokenId].rEndTime," ERROR: Rent not expired, ongoing rent duration");
