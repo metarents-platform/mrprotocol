@@ -65,6 +65,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     event Payment_Distributed(uint256 rTokenId, uint256 totalRentPrice, uint256 serviceFee, uint256 rentPriceAfterFee, uint256 changeAfterPayment);
     event Supported_Payment_Method_Added(address tokenAddress, string tokenSymbol);
     event Rent_Confirmed_Paid(address nftAddress, uint256 originalTokenId, uint256 _RNFT_tokenId);
+    event Rent_Agreemeng_Terminated(address nftAddress, uint256 orignal_tokenId, uint256 RNFT_tokenId);
     // events newly added !>
 
     /* Proxy upgradable constructor */
@@ -189,8 +190,6 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         return _RNFT_tokenId;
     }
 
-    function confirm(address nftAddress,uint256 originalTokenId) external virtual payable {}
-
     /// @dev confirm rent agreement and pay rent fee to market beneficiary
     function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId)
     external virtual payable returns (uint256 _RNFT_tokenId){
@@ -314,13 +313,15 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     }
 
      // @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)
-    function terminateRentAgreement(address nftAddress, uint256 oNftId) public nonReentrant{
-        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
+    function terminateRentAgreement(address nftAddress, uint256 oNftId) public nonReentrant {
+        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender, "unauthorized: address is not owner or lending not registered");
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         IRNFT(_RNFTContractAddress)._terminateRent(_RNFT_tokenId, msg.sender);
+
+        emit Rent_Agreemeng_Terminated(nftAddress, oNftId, _RNFT_tokenId);
     }
 
     /// @dev terminate rent and redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)

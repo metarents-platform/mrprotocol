@@ -64,6 +64,7 @@ contract RNFT is
         uint256 rEndTime,
         bool isRented
     );
+    event Rent_Terminated(uint256 RTokenId, bool isRented, uint256 rentPrice);
 
     // events newly added !>
 
@@ -265,11 +266,14 @@ contract RNFT is
         // check if rent duration is due
         require(
             block.timestamp >= _rmetadata[RTokenId].rEndTime,
-            " ERROR: Rent not expired, ongoing rent duration"
+            "ERROR: Rent not expired, ongoing rent duration"
         );
         // Clear RNFT metadata
         clearRNFTState(RTokenId);
         // revokes the renter's operating status on the original NFT. DECENTRALAND
+        // TODO...
+
+        emit Rent_Terminated(RTokenId, _rmetadata[RTokenId].isRented, _rmetadata[RTokenId].rentPrice);
     }
 
     function _redeemNFT(
@@ -308,11 +312,11 @@ contract RNFT is
 
     function clearRNFTState(uint256 RTokenId) public onlyAdmin returns (bool) {
         // Clear/invalidate the preminted rnft metadata mapping
-        //delete _rmetadata[RTokenId];
-        _rmetadata[RTokenId].isRented = false;
-        _rmetadata[RTokenId].rentPrice = 0;
-        _rmetadata[RTokenId].approvedRentPeriod = 0;
-        _rmetadata[RTokenId].approvedRenter = address(0);
+        delete _rmetadata[RTokenId];
+        // _rmetadata[RTokenId].isRented = false;
+        // _rmetadata[RTokenId].rentPrice = 0;
+        // _rmetadata[RTokenId].approvedRentPeriod = 0;
+        // _rmetadata[RTokenId].approvedRenter = address(0);
         return true;
     }
 

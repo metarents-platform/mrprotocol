@@ -425,7 +425,7 @@ describe("Module to confirm rent booking requests & distribute payment", async (
               renter.address
             )
         ).to.be.revertedWith("Gateway not approved yet!");
-      })
+      });
       it("Success : Should emit event 'Payment_Distributed' with perfect payment distribution", async () => {
         // store current balance before the payment
         const prevLenderBalance = await trillToken.balanceOf(owner.address);
