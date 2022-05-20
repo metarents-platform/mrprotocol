@@ -210,7 +210,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     }
 
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    public payable returns (uint256 totalRentPrice,uint256 _serviceFeeAmount){
+    public payable returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t-- 
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
@@ -220,9 +220,9 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
         totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
         /** Transaction to be sent to MarketGatewaytreasury wallet */
-        _serviceFeeAmount = SafeMathUpgradeable.div(SafeMathUpgradeable.mul(totalRentPrice, getFee()),1e2); // totalRentPrice * _fee / 100
+        serviceFeeAmount = SafeMathUpgradeable.div(SafeMathUpgradeable.mul(totalRentPrice, getFee()),1e2); // totalRentPrice * _fee / 100
         // Transaction to be sent to beneficiary (NFT Lender)
-        uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(totalRentPrice,_serviceFeeAmount);
+        uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(totalRentPrice, serviceFeeAmount);
         // Change (in case of ETH) remained after payment
         uint256 changeAfterPayment = 0;
 
@@ -234,6 +234,9 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             
             // Send `rentPriceAfterFee` ETH to `lender wallet address`
             (success, ) = payable(_lendRecord.lender).call{value: rentPriceAfterFee}("");
+            // Send `serviceFee` ETH to `treasury wallet address`
+            (success, ) = payable(_treasuryAddress).call{value: serviceFeeAmount}("");
+
             require(success, "Transfer 1 to lender (beneficiary) - failed");
             // Send changes back to the renter
             if (totalRentPrice < msg.value) {
@@ -248,25 +251,26 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             console.log(totalRentPrice, _renterBalance);
             require(_renterBalance >= totalRentPrice, "Not enough balance to execute payment transaction");
             
-            // Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens.
-            console.log("apprving...");
-            success = erc20CtrInstance.approve(address(this), totalRentPrice); // change to SafeERC20
-            require(success, "Allowance Approval failed");
-            console.log("approved...");
+            // // Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens.
+            // console.log("apprving...");
+            // success = erc20CtrInstance.approve(address(this), totalRentPrice); // change to SafeERC20
+            // require(success, "Allowance Approval failed");
+            // console.log("approved...");
+            
+            // check if approved
+            uint256 allowance = erc20CtrInstance.allowance(_renterAddress, address(this));
+            require(allowance >= totalRentPrice, "Gateway not approved yet!");
             
             // Send `rentPriceAfterFee` tokens from `render wallet address` to `lender` using the allowance mechanism.
-            console.log("transferring to lender...");
             success = erc20CtrInstance.transferFrom(_renterAddress, _lendRecord.lender, rentPriceAfterFee);
             require(success, "Transfer 1 to lender (beneficiary) - failed");
-            console.log("transferred to lender...");
-            // Send `_serviceFeeAmount` tokens from `render wallet address` to `MetaRents Treasury DAO Address` using the allowance mechanism.
-            console.log("transferring to treasury...");
-            success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress, _serviceFeeAmount);
+            
+            // Send `serviceFeeAmount` tokens from `render wallet address` to `MetaRents Treasury DAO Address` using the allowance mechanism.
+            success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress, serviceFeeAmount);
             require(success, "Transfer 2 to treasury - failed");
-            console.log("transferred to treasury...");
         }
 
-        emit Payment_Distributed(_RNFT_tokenId, totalRentPrice, _serviceFeeAmount, rentPriceAfterFee, changeAfterPayment);
+        emit Payment_Distributed(_RNFT_tokenId, totalRentPrice, serviceFeeAmount, rentPriceAfterFee, changeAfterPayment);
     }
 
     /// @dev to cancel a renter approval if renter doesn't confirm and pay rent in X hours time after approval
