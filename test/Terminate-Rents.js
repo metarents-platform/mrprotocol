@@ -96,8 +96,9 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
         ).to.be.revertedWith("NFT rental status: not rented");
       });
     });
-    describe("Test cases ater renting", async () => {
+    describe("Test cases after renting", async () => {
       beforeEach(async () => {
+        // await ethers.provider.send("hardhat_reset");
         // first of all, needs to list for lending
         await gateway.createLendRecord(
           NFT_ADDRESS,
@@ -128,18 +129,33 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
             value: RENT_PRICE_PER_TIMEUNIT_ETH * MAX_DURATION,
           });
       });
-      // it("Should revert with messsage 'Caller is not original NFT Owner' if an annonymous account calls!", async () => {
-      //   // check
-      //   await expect(
-      //     rNFT._terminateRent(rTokenId, other.address)
-      //   ).to.be.revertedWith("Caller is not original NFT Owner");
-      // });
-      // it("Should revert with messsage 'ERROR: Rent not expired, ongoing rent duration' when rent is not over!", async () => {
-      //   // check
-      //   await expect(
-      //     rNFT._terminateRent(rTokenId, owner.address)
-      //   ).to.be.revertedWith("ERROR: Rent not expired, ongoing rent duration");
-      // });
+      it("Should revert with messsage 'Caller is not original NFT Owner' if an annonymous account calls!", async () => {
+        // stimulate time
+        await ethers.provider.send("evm_increaseTime", [
+          ONE_MONTH * MAX_DURATION,
+        ]);
+        await ethers.provider.send("evm_mine");
+        // check
+        await expect(
+          rNFT._terminateRent(rTokenId, other.address)
+        ).to.be.revertedWith("Caller is not original NFT Owner");
+
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
+      });
+      it("Should revert with messsage 'ERROR: Rent not expired, ongoing rent duration' when rent is not over!", async () => {
+        // check
+        await expect(
+          rNFT._terminateRent(rTokenId, owner.address)
+        ).to.be.revertedWith("ERROR: Rent not expired, ongoing rent duration");
+
+        // stimulate time
+        await ethers.provider.send("evm_increaseTime", [
+          ONE_MONTH * MAX_DURATION,
+        ]);
+        await ethers.provider.send("evm_mine");
+        // redeem NFT
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
+      });
       it("Success : Should emit the event 'Rent_Terminated' with params null!", async () => {
         // stimulate time
         await ethers.provider.send("evm_increaseTime", [
@@ -150,6 +166,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
         await expect(rNFT._terminateRent(rTokenId, owner.address))
           .to.emit(rNFT, "Rent_Terminated")
           .withArgs(rTokenId, false, 0);
+        // redeem NFT
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
     });
   });
@@ -193,16 +211,27 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
       ).to.be.revertedWith(
         "unauthorized: address is not owner or lending not registered"
       );
+
+      // stimulate time
+      await ethers.provider.send("evm_increaseTime", [
+        ONE_MONTH * MAX_DURATION,
+      ]);
+      await ethers.provider.send("evm_mine");
+      // redeem
+      await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
     it("Success : Should emit the event 'Rent_Agreemeng_Terminated'", async () => {
       // stimulate time
       await ethers.provider.send("evm_increaseTime", [
         ONE_MONTH * MAX_DURATION,
       ]);
+      await ethers.provider.send("evm_mine");
       // check
       await expect(gateway.terminateRentAgreement(NFT_ADDRESS, ORIGINAL_NFT_ID))
         .to.emit(gateway, "Rent_Agreemeng_Terminated")
         .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
+
+      await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
   });
 });

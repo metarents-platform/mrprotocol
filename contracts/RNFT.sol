@@ -253,8 +253,7 @@ contract RNFT is
     }
 
     function _terminateRent(uint256 RTokenId, address caller)
-        public
-        virtual
+        public virtual
         onlyAdmin
     {
         require(RTokenId != 0, "RNFT Token ID doesn't exist");
@@ -282,10 +281,11 @@ contract RNFT is
         uint256 oNftId,
         address originalNFTOwner
     ) public virtual onlyAdmin {
-        _terminateRent(RTokenId, originalNFTOwner);
+        if (isRented(RTokenId)) _terminateRent(RTokenId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
-        delete _rmetadata[RTokenId];
+        // this is already done by _terminateRent, so lemme comment this line
+        // delete _rmetadata[RTokenId];
         // Check if burnRNFt should be called in approveRenter (first if branch)
         _burnRNFT(RTokenId); // Burn RNFT only on Redeem
         IERC721(nftAddress).safeTransferFrom(

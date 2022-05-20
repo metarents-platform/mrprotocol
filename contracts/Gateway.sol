@@ -172,6 +172,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 _rNftId = IRNFT(_RNFTContractAddress).initializeRentMetadata(msg.sender, nftAddress, _NFTId);
         // supply to RNFT contract NFT metadata to map it to its owner and RNFT metadata, and approve renter
         _approveRenterRequest(renter_address, nftAddress,_NFTId, rentDuration, _rNftId);
+        
         emit RenterApproved_And_RNFTPreMinted(msg.sender, renter_address, nftAddress, _NFTId, _rNftId, rentDuration);
         return _rNftId;
     }
@@ -326,7 +327,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /// @dev terminate rent and redeem original NFT (need to create a new lending to list the asset in the marketplace ++gas fees)
     function redeemNFT(address nftAddress, uint256 oNftId) public nonReentrant{
-        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
+        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender, "unauthorized: address is not owner or lending not registered");
         //(nftAddress != address(0) && oNftId != 0) &&
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);

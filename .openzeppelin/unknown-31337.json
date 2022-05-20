@@ -2,7 +2,7 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0x59C824d3205EFfaf7B35A390f444e06C1C79990A",
-    "txHash": "0x9ea6658a7ee2444769c37d6a3dbb05423fb6b62302ff795f91535ed2a93c5b36"
+    "txHash": "0x189e45f6c6c1301bbf2db7654fb128378a70fbfb9fc26a514a9410505ea09bb5"
   },
   "proxies": [
     {
@@ -501,16 +501,6 @@
       "kind": "transparent"
     },
     {
-      "address": "0x453EbE03f42A6F8cF74976a0FeFb1fd7120B42C7",
-      "txHash": "0x2d52db6270f53d280bf49e95348a6c6b497cf29acd8583253cc81381ff557bd8",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x8aB4C34643a627649E0C2836dcE06B2a92B57071",
-      "txHash": "0xdfc11e8b2d2458395525c828e17973c1c77092ae0f4b9cd4fe1293497f260f2e",
-      "kind": "transparent"
-    },
-    {
       "address": "0x97A7A7649f50B402C15f97d473E74E04A7C42a12",
       "txHash": "0x72845d4f516ee622dd36506362681f49f7fbaf6722ca02dadc91426a794e0b47",
       "kind": "transparent"
@@ -518,41 +508,6 @@
     {
       "address": "0x80199EAfFc808Fcd7DaB8146B1E1889D0646b799",
       "txHash": "0xe7e278258e1dfd653ef4cac6d1d815363f5602bfdb01b32221cb51ba64438fbe",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x1Ec3732af3c94c404b14d6f36921bBf747a2EE51",
-      "txHash": "0x567cc5533657943abd2aa84021087b12fe339e588b46d80aecdedad4d0532fdc",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x8830860491c8eDB470027dcb09D04cBee083E57c",
-      "txHash": "0xb5db2842d779a214fe2a425e70baf99aa592c875cc25d4ce794802295fcaf829",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x1Bff188BBc0dEe6120aaf55155ED23E187edA156",
-      "txHash": "0x9cc7d541e845df0425eeb458c9b32ee79d2b7a45332b4c142a4502c4a4406e23",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x34De843e0284da8F23004EB69Fb264A4582DF0Da",
-      "txHash": "0x65bebb09f9f87119bf7dd006c93e2d9e1dcd3aa1ee7a0af425ecf1adbe1f9f11",
-      "kind": "transparent"
-    },
-    {
-      "address": "0xd44cF53d1f9894782819776731C57393acf97c69",
-      "txHash": "0x6c361f359c890e5de0fc33aeba5ba51b250cfcab405f2e2b88fae2d60b86c900",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x071EA05d4BF5b0948Dbf113662a2E14602B57875",
-      "txHash": "0xbd39ffd9c5f8f9fd4ddecc8edae9fc5715871526d85129e9ad9d3b82e7534483",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x321614B1b67ce35f1875dbe2dD52347A11201C97",
-      "txHash": "0x57be23e82856c4f22dff9447fb729f65f5bb55022ee6800f5cc6b478cb24e60f",
       "kind": "transparent"
     },
     {
@@ -566,13 +521,133 @@
       "kind": "transparent"
     },
     {
+      "address": "0x1Ec3732af3c94c404b14d6f36921bBf747a2EE51",
+      "txHash": "0x0992ce6364a21c67a4a290bbd9734371025373231da61349c85394bb02416e33",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x944599a5AB0eEf518c1Bc7894a37B4B9C50069aC",
+      "txHash": "0xabe64a6c5d3a34caa3bb8c023a13f052af09bb65af9a53150810f06e2b6ef0b6",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xD148A4FA066490443299BB1939F1EF90045c8f6F",
+      "txHash": "0xfac9d50b9627ebf14c49d918d7f086502aa17a7bee037ca23026294b1a7c32c5",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x453EbE03f42A6F8cF74976a0FeFb1fd7120B42C7",
+      "txHash": "0x86f1e4642ada85b16e28effe105091d09d30db4cda5c4153148c13daab554ec7",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8aB4C34643a627649E0C2836dcE06B2a92B57071",
+      "txHash": "0x9b4d928cbe95a884ef03cac29f999fea50ec6f26280b97fbfd5821374949082e",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xFE5C5E0384a060dCC72F5A9ce18e599829c63aa0",
+      "txHash": "0x3fbbf3c66942dde81c8e27cea53daa966202bbb6b559d1fdef59ffc5e244cc44",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc516A6C66c1A498FC118BB1A8f3f5dB742197861",
+      "txHash": "0xf62a3a65235d389c257c281803cb9a94900f8281d29e00ad50ff4e8e2f39b39a",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x55c4849B9485C7927Dd62a6E36069F6D8D2d0e48",
+      "txHash": "0x906bae58227786b8318cb5cb8303880976e0cfa936ae64420e88698496b89ebc",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xF594758B4630D53dcAA10992d4AFA267e891FCDb",
+      "txHash": "0x7143353c2dff80671df8cd88cf885eab67fa360a9e556d3ba1bea17266c0d071",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xDDf5C5Ff1f0A6404D2F96f1b0466d51EE96A807D",
+      "txHash": "0x24f27d7b28fbe91e93fce91a9c251b49b6e99a9497e1ad198ad3dba7ed8bdd03",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6c7091ebcdC7E8c3A105AFD0767c9F0Cdbf30596",
+      "txHash": "0xe78ed195a8ea19293a9fb775f59f5b9c9f583de525d87288d1b994cbc5802f29",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5986408f3d5a837859bf8D0fe59Ba7b04d60c753",
+      "txHash": "0xc8383464df7fa6d2bce0d10218edcabbc035d744f0480c59b08b2a8a4ae782ef",
+      "kind": "transparent"
+    },
+    {
       "address": "0xD3197B08AA76D4A1f4A504793C6B861D883d027b",
-      "txHash": "0x0b1c576e4f3f336e8d049fefde00303753bf04c3ad545de226ec79b82e487dca",
+      "txHash": "0x9739c0710a8ab5f9139026e0c8ecde6d6a0519ddd3cf0bd9e4caac242156c6c3",
       "kind": "transparent"
     },
     {
       "address": "0xbCC795DDDE327f37FAc00529F3d25ac50712E7cE",
-      "txHash": "0xf49d60f5f3f3e34422dfcab81708b684332316d0bddd79100145174b43fd6333",
+      "txHash": "0x43a4cd2351210b76da67c534719ca226a73dec5da5d0517051faeaac76a7a4d3",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x34De843e0284da8F23004EB69Fb264A4582DF0Da",
+      "txHash": "0x4107ad0976bddff59ca643683795d77a733fad44e98f2e7d4fb42787210be21c",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xd44cF53d1f9894782819776731C57393acf97c69",
+      "txHash": "0xc79bbe984bcccdf028f167b29e65f8853e2d5cd90d294a72d4a566a3474419ff",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x071EA05d4BF5b0948Dbf113662a2E14602B57875",
+      "txHash": "0x1045b25af3eb1ddce9198984aac9e3b6dc4559bed277e314fe2506479da23e8b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x321614B1b67ce35f1875dbe2dD52347A11201C97",
+      "txHash": "0x2122a0d0c38719b90a495ff0d5b2248a34188c7b7c896607ede3e644ee02704f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8830860491c8eDB470027dcb09D04cBee083E57c",
+      "txHash": "0x058cb1280c903825caf258f367419c84e9edac15e5722951217462e44ea69abc",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x1Bff188BBc0dEe6120aaf55155ED23E187edA156",
+      "txHash": "0x74109232787650574f57d78dfb74a7217a780753c19249ceff67e52979f109fd",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xA0861C469491E3aFD52530a29c97d6Ad1987A775",
+      "txHash": "0xe0216bfd679ca1126c817ccea34b141d8b20b1de63b5ed67905e61ffb27f0483",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xC5c57ab860670b277a20E1d5262327443eBE15a1",
+      "txHash": "0x145921be2977fe586f23007f3fb53a5411da114a506e18e1d42bc24558063ab4",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xdAe4a41bF8Eba89616F3E19D016b6F73e7d78a63",
+      "txHash": "0xc2ef3405fd85e08ebc70a937249d24787cf2a4d5f473115a09b47740389eb42c",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x0976C9D38AF94deF63D3a8C10e293eeFBFC9adb0",
+      "txHash": "0x63d363cb08c71fe47717c015f8827c3c02ac00abe5ed44813fdd13c29471ff4e",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9CC42e0A42cD94320ca1C430856915e52d35a6ff",
+      "txHash": "0xe5c2bb068682428a11a1d45d734089a6eac36375455d4d929b491c6c3698eaf4",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x58De6DA37D6609A28b024e8D5Fc8772553158dB8",
+      "txHash": "0x9fa1ac9bd54467c5195f3dd1b11d5a61d4b0cca7f66c7f3a96c4d057b57bd4a2",
       "kind": "transparent"
     }
   ],
@@ -2281,9 +2356,287 @@
         }
       }
     },
-    "c9cd4f291b63ff0274507841ddab481d0805b48188eb1a6cb27c218ebf27d152": {
+    "b0343bc5b068fed773598ba58ff080655ab90ef753cbc126488783fc379d0257": {
+      "address": "0x540Ff9A34Ca00F82977C63e3606A8Ca62E081A60",
+      "txHash": "0xd44e209333f2b10101a623b4e66527db83f845bbd0f7227e30ef9d957e466c6b",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_roles",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)34_storage)",
+            "contract": "AccessControlUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:61"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "AccessControlUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:235"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "_RNFTContractAddress",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_address",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:37"
+          },
+          {
+            "label": "ERC20_USDCAddress",
+            "offset": 0,
+            "slot": "252",
+            "type": "t_address",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:49"
+          },
+          {
+            "label": "supportedPaymentTokens",
+            "offset": 0,
+            "slot": "253",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:50"
+          },
+          {
+            "label": "lendRegistry",
+            "offset": 0,
+            "slot": "254",
+            "type": "t_mapping(t_address,t_struct(lendRecord)7733_storage)",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:53"
+          },
+          {
+            "label": "_fee",
+            "offset": 0,
+            "slot": "255",
+            "type": "t_uint256",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:55"
+          },
+          {
+            "label": "_treasuryAddress",
+            "offset": 0,
+            "slot": "256",
+            "type": "t_address_payable",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:56"
+          },
+          {
+            "label": "_maxRentDurationLimit",
+            "offset": 0,
+            "slot": "257",
+            "type": "t_uint256",
+            "contract": "Gateway",
+            "src": "contracts/Gateway.sol:57"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_address_payable": {
+            "label": "address payable",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(lendRecord)7733_storage)": {
+            "label": "mapping(address => struct IGateway.lendRecord)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_struct(RoleData)34_storage)": {
+            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Lending)7727_storage)": {
+            "label": "mapping(uint256 => struct IGateway.Lending)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Lending)7727_storage": {
+            "label": "struct IGateway.Lending",
+            "members": [
+              {
+                "label": "lender",
+                "type": "t_address_payable",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "nftId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "nftAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "maxDuration",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "minDuration",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "timeUnit",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "rentPricePerTimeUnit",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "acceptedPaymentMethod",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "7"
+              }
+            ],
+            "numberOfBytes": "256"
+          },
+          "t_struct(RoleData)34_storage": {
+            "label": "struct AccessControlUpgradeable.RoleData",
+            "members": [
+              {
+                "label": "members",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "adminRole",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(lendRecord)7733_storage": {
+            "label": "struct IGateway.lendRecord",
+            "members": [
+              {
+                "label": "lendingMap",
+                "type": "t_mapping(t_uint256,t_struct(Lending)7727_storage)",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    "f75ac176e6e72e363e225ad80532b9b9b8d4b9e3137a2b7caa2780dede49a394": {
       "address": "0xA73af7C9f13B52cBBaed13FdD2CcE1AAf93a1801",
-      "txHash": "0x40e08dff5cb4c541e44adca124861d6d83a1ce299853354cc6a48140ef22f6a0",
+      "txHash": "0x703f5b783680568788f5bedf8336aee079c38ce69887e236e77b26ed94a00510",
       "layout": {
         "storage": [
           {
@@ -2587,284 +2940,6 @@
               }
             ],
             "numberOfBytes": "64"
-          },
-          "t_uint256": {
-            "label": "uint256",
-            "numberOfBytes": "32"
-          }
-        }
-      }
-    },
-    "b0343bc5b068fed773598ba58ff080655ab90ef753cbc126488783fc379d0257": {
-      "address": "0x540Ff9A34Ca00F82977C63e3606A8Ca62E081A60",
-      "txHash": "0xc1310a2b2d059424c97ae4835ffb46120e8da2c624661d0ddcdda5adfadb669c",
-      "layout": {
-        "storage": [
-          {
-            "label": "_initialized",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
-          },
-          {
-            "label": "_initializing",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ContextUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "51",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC165Upgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol:41"
-          },
-          {
-            "label": "_roles",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_mapping(t_bytes32,t_struct(RoleData)34_storage)",
-            "contract": "AccessControlUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:61"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "102",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "AccessControlUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol:235"
-          },
-          {
-            "label": "_status",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_uint256",
-            "contract": "ReentrancyGuardUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "152",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "ReentrancyGuardUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
-          },
-          {
-            "label": "_owner",
-            "offset": 0,
-            "slot": "201",
-            "type": "t_address",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "202",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
-          },
-          {
-            "label": "_RNFTContractAddress",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_address",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:37"
-          },
-          {
-            "label": "ERC20_USDCAddress",
-            "offset": 0,
-            "slot": "252",
-            "type": "t_address",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:49"
-          },
-          {
-            "label": "supportedPaymentTokens",
-            "offset": 0,
-            "slot": "253",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:50"
-          },
-          {
-            "label": "lendRegistry",
-            "offset": 0,
-            "slot": "254",
-            "type": "t_mapping(t_address,t_struct(lendRecord)7733_storage)",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:53"
-          },
-          {
-            "label": "_fee",
-            "offset": 0,
-            "slot": "255",
-            "type": "t_uint256",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:55"
-          },
-          {
-            "label": "_treasuryAddress",
-            "offset": 0,
-            "slot": "256",
-            "type": "t_address_payable",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:56"
-          },
-          {
-            "label": "_maxRentDurationLimit",
-            "offset": 0,
-            "slot": "257",
-            "type": "t_uint256",
-            "contract": "Gateway",
-            "src": "contracts/Gateway.sol:57"
-          }
-        ],
-        "types": {
-          "t_address": {
-            "label": "address",
-            "numberOfBytes": "20"
-          },
-          "t_address_payable": {
-            "label": "address payable",
-            "numberOfBytes": "20"
-          },
-          "t_array(t_address)dyn_storage": {
-            "label": "address[]",
-            "numberOfBytes": "32"
-          },
-          "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]",
-            "numberOfBytes": "1568"
-          },
-          "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]",
-            "numberOfBytes": "1600"
-          },
-          "t_bool": {
-            "label": "bool",
-            "numberOfBytes": "1"
-          },
-          "t_bytes32": {
-            "label": "bytes32",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_address,t_bool)": {
-            "label": "mapping(address => bool)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_address,t_struct(lendRecord)7733_storage)": {
-            "label": "mapping(address => struct IGateway.lendRecord)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_bytes32,t_struct(RoleData)34_storage)": {
-            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_uint256,t_struct(Lending)7727_storage)": {
-            "label": "mapping(uint256 => struct IGateway.Lending)",
-            "numberOfBytes": "32"
-          },
-          "t_struct(Lending)7727_storage": {
-            "label": "struct IGateway.Lending",
-            "members": [
-              {
-                "label": "lender",
-                "type": "t_address_payable",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "nftId",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "nftAddress",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
-                "label": "maxDuration",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "3"
-              },
-              {
-                "label": "minDuration",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "4"
-              },
-              {
-                "label": "timeUnit",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "5"
-              },
-              {
-                "label": "rentPricePerTimeUnit",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "6"
-              },
-              {
-                "label": "acceptedPaymentMethod",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "7"
-              }
-            ],
-            "numberOfBytes": "256"
-          },
-          "t_struct(RoleData)34_storage": {
-            "label": "struct AccessControlUpgradeable.RoleData",
-            "members": [
-              {
-                "label": "members",
-                "type": "t_mapping(t_address,t_bool)",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "adminRole",
-                "type": "t_bytes32",
-                "offset": 0,
-                "slot": "1"
-              }
-            ],
-            "numberOfBytes": "64"
-          },
-          "t_struct(lendRecord)7733_storage": {
-            "label": "struct IGateway.lendRecord",
-            "members": [
-              {
-                "label": "lendingMap",
-                "type": "t_mapping(t_uint256,t_struct(Lending)7727_storage)",
-                "offset": 0,
-                "slot": "0"
-              }
-            ],
-            "numberOfBytes": "32"
           },
           "t_uint256": {
             "label": "uint256",
