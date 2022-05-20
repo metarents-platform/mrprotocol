@@ -64,6 +64,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     event Approval_Canceled(address nftAddress, address ownerAddress, uint256 nftId, address renterAddress, uint256 rNFTId);
     event Payment_Distributed(uint256 rTokenId, uint256 totalRentPrice, uint256 serviceFee, uint256 rentPriceAfterFee, uint256 changeAfterPayment);
     event Supported_Payment_Method_Added(address tokenAddress, string tokenSymbol);
+    event Rent_Confirmed_Paid(address nftAddress, uint256 originalTokenId, uint256 _RNFT_tokenId);
     // events newly added !>
 
     /* Proxy upgradable constructor */
@@ -96,7 +97,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     }
 
     /// @dev check if address is owner or approved to operate NFT
-    modifier _onlyApprovedOrOwner(address nftAddress,uint256 tokenId){
+    modifier _onlyApprovedOrOwner(address nftAddress, uint256 tokenId){
         IERC721 nftCtrInstance = IERC721(nftAddress);
         address operator = msg.sender;
         address owner = nftCtrInstance.ownerOf(tokenId);
@@ -188,9 +189,11 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         return _RNFT_tokenId;
     }
 
+    function confirm(address nftAddress,uint256 originalTokenId) external virtual payable {}
+
     /// @dev confirm rent agreement and pay rent fee to market beneficiary
-    function confirmRentAgreementAndPay(address nftAddress,uint256 originalTokenId)
-    public virtual returns (uint256 _RNFT_tokenId){
+    function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId)
+    external virtual payable returns (uint256 _RNFT_tokenId){
         address renterAddress = msg.sender;
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[originalTokenId];
         address _lender = _lendRecord.lender;
@@ -199,13 +202,19 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         require(rNFTCtrInstance.isApprovedRenter(renterAddress, _RNFT_tokenId), "Renter address not approved");
         require(!rNFTCtrInstance.isRented(_RNFT_tokenId), "NFT rental status: already rented");
-        if(!rNFTCtrInstance.isMinted(_RNFT_tokenId)){
+        
+        if(!rNFTCtrInstance.isMinted(_RNFT_tokenId)) {
             // Mint RNFT with specific time duration for rent purpose and save Rent metadata
             rNFTCtrInstance._mintRNFT(nftAddress, _lender, originalTokenId, _RNFT_tokenId);
         }
+        
         distributePaymentTransactions(nftAddress, originalTokenId,_RNFT_tokenId, renterAddress);
+        
         //Call startRent() function to change the rent status in RNFT (isRented=True) and calculate start/end time
         rNFTCtrInstance.startRent(_RNFT_tokenId);
+
+        emit Rent_Confirmed_Paid(nftAddress, originalTokenId, _RNFT_tokenId);
+        
         return _RNFT_tokenId;
     }
 

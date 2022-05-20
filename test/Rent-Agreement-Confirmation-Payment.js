@@ -3,7 +3,6 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
-const { getAddressFromOutputScript } = require("metaversejs/src/script");
 
 /*
 Module to confirm rent booking requests & pay
@@ -30,7 +29,6 @@ describe("Module to confirm rent booking requests & distribute payment", async (
   /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
 
   beforeEach(async () => {
-
     [owner, other, treasury, renter, ...addrs] = await ethers.getSigners();
 
     // deploy RNFT -> rNFT
@@ -482,25 +480,136 @@ describe("Module to confirm rent booking requests & distribute payment", async (
       });
     });
   });
-  // describe("Gateway/confirmRentAgreementAndPay : Confirms rental agreement & executes payment distribution (treasury & beneficiary/lender)", async () => {
-  //   it("Should revert with message 'RNFT Token ID doesn't exist' until the NFT is listed for lending", async () => {
-  //     await expect(
-  //       gateway.confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID)
-  //     ).to.be.revertedWith("RNFT Token ID doesn't exist");
-  //   });
-  //   it("Should revert with message 'Renter address not approved' until the renter is not approved (NFT's already listed for lending)", async () => {
-  //     await gateway.createLendRecord(
-  //       NFT_ADDRESS,
-  //       ORIGINAL_NFT_ID,
-  //       MAX_DURATION * ONE_MONTH,
-  //       MIN_DURATION * ONE_MONTH,
-  //       ONE_MONTH,
-  //       RENT_PRICE_PER_TIMEUNIT_ETH,
-  //       ETH_ADDRESS
-  //     );
-  //     await expect(
-  //       gateway.confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID)
-  //     ).to.be.revertedWith("RNFT Token ID doesn't exist");
-  //   });
-  // });
+  describe("Gateway/confirmRentAgreementAndPay : Confirms rental agreement & executes payment distribution (treasury & beneficiary/lender)", async () => {
+    it("Should revert with message 'RNFT Token ID doesn't exist' until the NFT is listed for lending", async () => {
+      await expect(
+        gateway.confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID)
+      ).to.be.revertedWith("RNFT Token ID doesn't exist");
+    });
+    it("Should revert with message 'Renter address not approved' until the renter is not approved (NFT's already listed for lending)", async () => {
+      await gateway.createLendRecord(
+        NFT_ADDRESS,
+        ORIGINAL_NFT_ID,
+        MAX_DURATION * ONE_MONTH,
+        MIN_DURATION * ONE_MONTH,
+        ONE_MONTH,
+        RENT_PRICE_PER_TIMEUNIT_ETH,
+        ETH_ADDRESS
+      );
+      await expect(
+        gateway
+          .connect(renter)
+          .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID)
+      ).to.be.revertedWith("RNFT Token ID doesn't exist");
+    });
+    describe("Success : Should emit the event 'Rent_Confirmed_Paid'", async () => {
+      let rTokenId;
+      beforeEach(async () => {
+        // Get Original NFT contract
+        const SmolRunnersNFT = await ethers.getContractAt(
+          NFT_NAME,
+          NFT_ADDRESS,
+          owner
+        );
+        // Approve the RNFT contract to operate NFTs
+        await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+        // set Gateway as the admin of RNFT
+        await rNFT._setNewAdmin(gateway.address);
+      });
+
+      it("ETH payment", async () => {
+        // first of all, needs to list for lending
+        await gateway.createLendRecord(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
+          ONE_MONTH,
+          RENT_PRICE_PER_TIMEUNIT_ETH,
+          ETH_ADDRESS
+        );
+        // approve & premint
+        await gateway.approveAndPreMintRNFT(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          renter.address
+        );
+        // get RTokenId
+        rTokenId = await rNFT.getRnftFromNft(
+          NFT_ADDRESS,
+          owner.address,
+          ORIGINAL_NFT_ID
+        );
+        // check
+        await expect(
+          gateway
+            .connect(renter)
+            .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID, {
+              value: RENT_PRICE_PER_TIMEUNIT_ETH * MAX_DURATION,
+            })
+        )
+          .to.emit(gateway, "Rent_Confirmed_Paid")
+          .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
+      });
+      it("ERC20 token payment", async () => {
+        // Get Trill Token contract
+        const trillToken = await ethers.getContractAt(
+          TRILL_NAME,
+          TRILL_ADDRESS,
+          owner
+        );
+        // Get Original NFT contract
+        const SmolRunnersNFT = await ethers.getContractAt(
+          NFT_NAME,
+          NFT_ADDRESS,
+          owner
+        );
+        // Approve the RNFT contract to operate NFTs
+        await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+        // Add TRILL as the supported payment method
+        await gateway.setSupportedPaymentTokens(TRILL_ADDRESS);
+        // LIFT nft for lending
+        await gateway.createLendRecord(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          MIN_DURATION * ONE_MONTH,
+          ONE_MONTH,
+          RENT_PRICE_PER_TIMEUNIT_TRILL,
+          TRILL_ADDRESS
+        );
+        // approve & premint
+        await gateway.approveAndPreMintRNFT(
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          MAX_DURATION * ONE_MONTH,
+          renter.address
+        );
+        // get RTokenId
+        rTokenId = await rNFT.getRnftFromNft(
+          NFT_ADDRESS,
+          owner.address,
+          ORIGINAL_NFT_ID
+        );
+        // approve Gateway to take token from the renter
+        await trillToken
+          .connect(renter)
+          .approve(
+            gateway.address,
+            RENT_PRICE_PER_TIMEUNIT_TRILL * MAX_DURATION
+          );
+        // check
+        await expect(
+          gateway
+            .connect(renter)
+            .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID, {
+              value: RENT_PRICE_PER_TIMEUNIT_TRILL * MAX_DURATION,
+            })
+        )
+          .to.emit(gateway, "Rent_Confirmed_Paid")
+          .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
+      });
+    });
+  });
 });
