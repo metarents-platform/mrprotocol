@@ -551,6 +551,14 @@ describe("Module to confirm rent booking requests & distribute payment", async (
         )
           .to.emit(gateway, "Rent_Confirmed_Paid")
           .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
+        
+          // stimulate time
+        await ethers.provider.send("evm_increaseTime", [
+          ONE_MONTH * MAX_DURATION,
+        ]);
+        await ethers.provider.send("evm_mine");
+        // redeem
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
       it("ERC20 token payment", async () => {
         // Get Trill Token contract
@@ -609,6 +617,14 @@ describe("Module to confirm rent booking requests & distribute payment", async (
         )
           .to.emit(gateway, "Rent_Confirmed_Paid")
           .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
+
+        // stimulate time
+        await ethers.provider.send("evm_increaseTime", [
+          ONE_MONTH * MAX_DURATION,
+        ]);
+        await ethers.provider.send("evm_mine");
+        // redeem
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
     });
   });
