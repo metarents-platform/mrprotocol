@@ -6,6 +6,8 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
 /* ERC token contracts */
 // import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -243,18 +245,25 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             uint256 _renterBalance = 0;
 
             _renterBalance = erc20CtrInstance.balanceOf(_renterAddress);
+            console.log(totalRentPrice, _renterBalance);
             require(_renterBalance >= totalRentPrice, "Not enough balance to execute payment transaction");
             
             // Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens.
+            console.log("apprving...");
             success = erc20CtrInstance.approve(address(this), totalRentPrice); // change to SafeERC20
             require(success, "Allowance Approval failed");
+            console.log("approved...");
             
             // Send `rentPriceAfterFee` tokens from `render wallet address` to `lender` using the allowance mechanism.
+            console.log("transferring to lender...");
             success = erc20CtrInstance.transferFrom(_renterAddress, _lendRecord.lender, rentPriceAfterFee);
             require(success, "Transfer 1 to lender (beneficiary) - failed");
+            console.log("transferred to lender...");
             // Send `_serviceFeeAmount` tokens from `render wallet address` to `MetaRents Treasury DAO Address` using the allowance mechanism.
-            success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress,_serviceFeeAmount);
+            console.log("transferring to treasury...");
+            success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress, _serviceFeeAmount);
             require(success, "Transfer 2 to treasury - failed");
+            console.log("transferred to treasury...");
         }
 
         emit Payment_Distributed(_RNFT_tokenId, totalRentPrice, _serviceFeeAmount, rentPriceAfterFee, changeAfterPayment);
@@ -352,7 +361,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         // require(tokenAddress.supportsInterface(ERC20InterfaceId),"NOT_ERC20_TOKEN");
         string memory tokenSymbol = string('ETH');
         if(tokenAddress != address(0)){
-        tokenSymbol = ERC20(tokenAddress).symbol();
+            tokenSymbol = ERC20(tokenAddress).symbol();
         }
         require(!isSupportedPaymentToken(tokenAddress), "token already supported");
         supportedPaymentTokens.push(tokenAddress);
