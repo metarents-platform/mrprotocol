@@ -93,6 +93,7 @@ module.exports = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+    scripts: "./scripts",
   },
   chai: {
     enableTimeouts: false,
