@@ -371,6 +371,7 @@ contract MiniMeToken is Controlled {
 
         // An event to make the token easy to find on the blockchain
         NewCloneToken(address(cloneToken), snapshot);
+        
         return cloneToken;
     }
 
