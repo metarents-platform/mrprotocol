@@ -20,6 +20,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "./IRNFT.sol";
+import "./DCL/LANDRegistry.sol";
 
 contract RNFT is
     Initializable,
@@ -39,6 +40,9 @@ contract RNFT is
         private _OwnerRTokenID;
     // RTokenId -> Renting
     mapping(uint256 => IRNFT.Renting) private _rmetadata;
+
+    // address of DCL LANDRegistry contract
+    address addressDCL;
 
     // < events newly added
     event Metadata_Generated(
@@ -96,6 +100,12 @@ contract RNFT is
         bytes calldata
     ) external virtual override returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+    function setDCLAddress(address dcl) public onlyAdmin returns (bool) {
+        require(addressDCL != dcl, "DCL address already set!");
+        addressDCL = dcl;
+        return true;
     }
 
     function approveRenter(
@@ -231,7 +241,7 @@ contract RNFT is
     }
 
     /** Start rent agreement after confirmed payment  */
-    function startRent(uint256 RTokenId) external virtual onlyAdmin {
+    function startRent(uint256 originalNFTId, uint256 RTokenId) external virtual onlyAdmin {
         // initiateRent()
         require(RTokenId != 0, "RNFT Token ID doesn't exist");
         require(!isRented(RTokenId), "NFT rental status: already rented");
@@ -241,8 +251,9 @@ contract RNFT is
             _now +
             _rmetadata[RTokenId].approvedRentPeriod;
         _rmetadata[RTokenId].isRented = true;
-        // grant renter with DCL Operator rightsa
-        //IERC721(addressDCL).setUpdateOperator(renter)
+
+        // grant renter with DCL Operator rights
+        ILANDRegistry(addressDCL).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
 
         emit Rent_Started(
             RTokenId,
@@ -252,7 +263,7 @@ contract RNFT is
         );
     }
 
-    function _terminateRent(uint256 RTokenId, address caller)
+    function _terminateRent(uint256 RTokenId, uint256 originalNFTId, address caller)
         public virtual
         onlyAdmin
     {
@@ -270,7 +281,7 @@ contract RNFT is
         // Clear RNFT metadata
         clearRNFTState(RTokenId);
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        // TODO...
+        IERC721(addressDCL).setUpdateOperator(originalNFTId, caller);
 
         emit Rent_Terminated(RTokenId, _rmetadata[RTokenId].isRented, _rmetadata[RTokenId].rentPrice);
     }
@@ -294,7 +305,7 @@ contract RNFT is
             oNftId
         );
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        //IERC721(addressDCL).setUpdateOperator(originalNFTOwner);
+        ILANDRegistry(addressDCL).setUpdateOperator(oNftId, originalNFTOwner);
     }
 
     function _burnRNFT(uint256 _RTokenId) private {

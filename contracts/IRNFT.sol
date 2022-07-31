@@ -30,8 +30,8 @@ interface IRNFT {
     // function approveRenter(address orignalOwner,address nftAddress,uint256 oTokenId,uint256 timeUnitSec,uint256 rentDuration,uint256 timeUnitPrice,address approvedRenter) external returns (uint256);
     function preMintRNFT() external returns(uint256);
     function _mintRNFT(address nftAddress, address originalOwner, uint256 oTokenId, uint256 _RTokenId) external returns (uint256);
-    function startRent(uint256 RTokenId) external;
-    function _terminateRent(uint256 RTokenId, address caller) external;
+    function startRent(uint256 originalNFTId, uint256 RTokenId) external;
+    function _terminateRent(uint256 RTokenId, uint256 originalNFTId, address caller) external;
     function _redeemNFT(uint256 RTokenId, address nftAddress, uint256 oNftId, address originalNFTOwner) external;
     function _burnRNFT() external returns(uint256);
     function clearRNFTState(uint256 RTokenId) external returns(bool);
@@ -48,5 +48,8 @@ interface IRNFT {
     /** RNFT Contract Role-based Access Control */
     function _setNewAdmin(address newAdmin) external;
     function _removeAdmin(address admin) external;
+
+    /** DCL contract management */
+    function setDCLAddress(address dcl) external returns(bool);
 
 }
