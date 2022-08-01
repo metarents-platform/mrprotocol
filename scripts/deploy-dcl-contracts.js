@@ -154,6 +154,8 @@ async function main() {
   console.log("1");
   [owner, user] = await ethers.getSigners();
 
+  console.log(owner.address, user.address);
+
   // console.log("2");
   // proxyAdmin = await upgrades.admin.getInstance();
 

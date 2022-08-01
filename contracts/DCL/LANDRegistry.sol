@@ -475,7 +475,10 @@ contract ERC721Base is AssetRegistryStorage, IERC721Base, ERC165 {
   function _isTeam(address operator) internal pure returns (bool)
   {
     require(operator != 0);
-    if ( operator == 0x237906fd2884235ed0F32DfE84cc89A97bB76249 ) return true;
+    // if ( operator == 0x237906fd2884235ed0F32DfE84cc89A97bB76249 ) return true;
+    // if ( operator == 0x5ca6Ff0784fcd11f2BA64B89f08404De56E8B2Fa ) return true;
+    // if ( operator == 0xFe42e5800276f7dF36140E996aF5C6Da363b0923 ) return true;
+    if ( operator == 0x0b145D505AbF1Dc698eFEb7E95b5FC9cb8F66910 ) return true;
     if ( operator == 0x5ca6Ff0784fcd11f2BA64B89f08404De56E8B2Fa ) return true;
     if ( operator == 0xFe42e5800276f7dF36140E996aF5C6Da363b0923 ) return true;
     return false;
@@ -1581,5 +1584,13 @@ contract LANDRegistry is Storage, Ownable, FullAssetRegistry, ILANDRegistry {
     if (registeredBalance[_to]) {
       landBalance.generateTokens(_to, 1);
     }
+  }
+
+  // metadata
+  /**
+  * @dev Returns an URI for a given token ID
+  */
+  function tokenURI(uint256 _tokenId) public pure returns (string) {
+    return _tokenMetadata(_tokenId);
   }
 }

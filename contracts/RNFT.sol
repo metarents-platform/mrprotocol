@@ -20,7 +20,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "./IRNFT.sol";
-import "./DCL/LANDRegistry.sol";
+// import "./DCL/LANDRegistry.sol";
 
 contract RNFT is
     Initializable,
@@ -253,7 +253,7 @@ contract RNFT is
         _rmetadata[RTokenId].isRented = true;
 
         // grant renter with DCL Operator rights
-        ILANDRegistry(addressDCL).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
+        // IERC721(addressDCL).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
 
         emit Rent_Started(
             RTokenId,
@@ -281,7 +281,7 @@ contract RNFT is
         // Clear RNFT metadata
         clearRNFTState(RTokenId);
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        IERC721(addressDCL).setUpdateOperator(originalNFTId, caller);
+        // IERC721(addressDCL).setUpdateOperator(originalNFTId, caller);
 
         emit Rent_Terminated(RTokenId, _rmetadata[RTokenId].isRented, _rmetadata[RTokenId].rentPrice);
     }
@@ -292,7 +292,7 @@ contract RNFT is
         uint256 oNftId,
         address originalNFTOwner
     ) public virtual onlyAdmin {
-        if (isRented(RTokenId)) _terminateRent(RTokenId, originalNFTOwner);
+        if (isRented(RTokenId)) _terminateRent(RTokenId, oNftId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
         // this is already done by _terminateRent, so lemme comment this line
@@ -305,7 +305,7 @@ contract RNFT is
             oNftId
         );
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        ILANDRegistry(addressDCL).setUpdateOperator(oNftId, originalNFTOwner);
+        // IERC721(addressDCL).setUpdateOperator(oNftId, originalNFTOwner);
     }
 
     function _burnRNFT(uint256 _RTokenId) private {
