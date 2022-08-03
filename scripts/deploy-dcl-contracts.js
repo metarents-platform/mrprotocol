@@ -151,6 +151,7 @@ async function setupContracts() {
 }
 
 async function saveAddresses() {
+  console.log("SAVING ADDRESSES NOW...");
   const fs = require("fs");
 
   const addresses = {
@@ -161,7 +162,7 @@ async function saveAddresses() {
     EStateRegistry: estateRegistry.address,
     LandRegistry: landRegistry.address,
   };
-  fs.writeFile("addresses.txt", addresses, function (err) {
+  fs.writeFile("./addresses.json", JSON.stringify(addresses), function (err) {
     if (err) {
       console.log(err);
     }
@@ -170,7 +171,7 @@ async function saveAddresses() {
 
 async function main() {
   console.log("1");
-  [owner, user] = await ethers.getSigners();
+  [owner] = await ethers.getSigners();
 
   // console.log("2");
   // proxyAdmin = await upgrades.admin.getInstance();
