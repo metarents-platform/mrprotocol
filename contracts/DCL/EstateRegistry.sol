@@ -958,7 +958,7 @@ contract Ownable is Migratable {
 // File: contracts/estate/IEstateRegistry.sol
 
 contract IEstateRegistry {
-  function mint(address to, string metadata) external returns (uint256);
+  function mint(address to, string metadataUri) external returns (uint256);
   function ownerOf(uint256 _tokenId) public view returns (address _owner); // from ERC721
 
   // Events
@@ -1147,7 +1147,7 @@ contract EstateRegistry is Migratable, IEstateRegistry, ERC721Token, ERC721Recei
   /**
    * @dev Mint a new Estate with some metadata
    * @param to The address that will own the minted token
-   * @param metadata Set an initial metadata
+   * @param metadataUri Set an initial metadata
    * @return An uint256 representing the new token id
    */
   function mint(address to, string metadataUri) external onlyRegistry returns (uint256) {
@@ -1519,7 +1519,7 @@ contract EstateRegistry is Migratable, IEstateRegistry, ERC721Token, ERC721Recei
   /**
    * @dev Internal function to mint a new Estate with some metadata
    * @param to The address that will own the minted token
-   * @param metadata Set an initial metadata
+   * @param metadataUri Set an initial metadata
    * @return An uint256 representing the new token id
    */
   function _mintEstate(address to, string metadataUri) internal returns (uint256) {

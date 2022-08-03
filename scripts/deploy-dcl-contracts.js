@@ -128,20 +128,15 @@ async function setupContracts() {
   console.log("6.8");
   await landRegistry.authorizeDeploy(owner.address);
 
-  console.log("6.9");
-  for (let index = 0; index < 6; index++) {
-    console.log("6.9.1");
-    await landRegistry.assignNewParcel(0, index, team.Robert);
-    console.log("6.9.2");
-    await landRegistry.assignNewParcel(1, index, team.Moughite);
-    console.log("6.9.3");
-    await landRegistry.assignNewParcel(2, index, team.Amine);
-    // await landRegistry.assignMultipleParcels([0, 0, 0], [0, 1, 2], team.Robert);
-    // // await landRegistry.authorizeDeploy(team.Moughite);
-    // await landRegistry.assignMultipleParcels([1, 1, 1], [0, 1, 2], team.Moughite);
-    // // await landRegistry.authorizeDeploy(team.Amine);
-    // await landRegistry.assignMultipleParcels([2, 2, 2], [0, 1, 2], team.Amine);
-  }
+  // console.log("6.9");
+  // for (let index = 0; index < 6; index++) {
+  //   console.log("6.9.1");
+  //   await landRegistry.assignNewParcel(0, index, team.Robert);
+  //   console.log("6.9.2");
+  //   await landRegistry.assignNewParcel(1, index, team.Moughite);
+  //   console.log("6.9.3");
+  //   await landRegistry.assignNewParcel(2, index, team.Amine);
+  // }
 
   // register balances
   // console.log("6.10");
