@@ -46,8 +46,8 @@ module.exports = {
       },
     ],
   },
-  defaultNetwork: "rinkeby",
-  // defaultNetwork: "local",
+  // defaultNetwork: "rinkeby",
+  defaultNetwork: "local",
   networks: {
     hardhat: {
       forking: {

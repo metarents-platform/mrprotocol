@@ -873,6 +873,10 @@ contract ERC721Metadata is AssetRegistryStorage, IERC721Metadata {
 // File: erc821/contracts/FullAssetRegistry.sol
 
 contract FullAssetRegistry is ERC721Base, ERC721Enumerable, ERC721Metadata {
+
+  // Optional mapping for token URIs
+  mapping(uint256 => string) internal tokenURIs;
+
   constructor() public {
   }
 
@@ -890,6 +894,27 @@ contract FullAssetRegistry is ERC721Base, ERC721Enumerable, ERC721Metadata {
   function decimals() external pure returns (uint256) {
     return 0;
   }
+
+  /**
+   * @dev Internal function to set the token URI for a given token
+   * Reverts if the token ID does not exist
+   * @param _assetId uint256 ID of the token to set its URI
+   * @param _uri string URI to assign
+   */
+  function _setTokenURI(uint256 _assetId, string _uri) internal {
+    require(_exists(_assetId));
+    tokenURIs[_assetId] = _uri;
+  }
+
+  /**
+   * @dev Returns an URI for a given token ID
+   * Throws if the token ID does not exist. May return an empty string.
+   * @param _assetId uint256 ID of the token to query
+   */
+  function tokenURI(uint256 _assetId) public view returns (string) {
+    require(_exists(_assetId));
+    return tokenURIs[_assetId];
+  }
 }
 
 // File: contracts/land/ILANDRegistry.sol
@@ -897,7 +922,7 @@ contract FullAssetRegistry is ERC721Base, ERC721Enumerable, ERC721Metadata {
 interface ILANDRegistry {
 
   // LAND can be assigned by the owner
-  function assignNewParcel(int x, int y, address beneficiary) external;
+  function assignNewParcel(int x, int y, address beneficiary, string metadataUri) external;
   function assignMultipleParcels(int[] x, int[] y, address beneficiary) external;
 
   // After one year, LAND can be claimed from an inactive public key
@@ -1059,17 +1084,18 @@ contract LANDRegistry is Storage, Ownable, FullAssetRegistry, ILANDRegistry {
   // LAND Create
   //
 
-  function assignNewParcel(int x, int y, address beneficiary) external onlyDeployer {
+  function assignNewParcel(int x, int y, address beneficiary, string metadataUri) external onlyDeployer {
     _generate(_encodeTokenId(x, y), beneficiary);
     _updateLandBalance(address(0), beneficiary);
-    _updateLandData(x, y, '"Test DCL LANDs", "Here description goes..."');
+    // _updateLandData(x, y, '"Test DCL LANDs", "Here description goes..."');
+    _setTokenURI(_encodeTokenId(x, y), metadataUri);
   }
 
   function assignMultipleParcels(int[] x, int[] y, address beneficiary) external onlyDeployer {
     for (uint i = 0; i < x.length; i++) {
       _generate(_encodeTokenId(x[i], y[i]), beneficiary);
       _updateLandBalance(address(0), beneficiary);
-      _updateLandData(x[i], y[i], '"Test DCL LANDs", "Here description goes..."');
+      // _updateLandData(x[i], y[i], '"Test DCL LANDs", "Here description goes..."');
     }
   }
 

@@ -13,7 +13,7 @@ let estateRegistry,
   miniMeTokenFactory,
   landRegistry;
 
-let owner, user;
+let owner;
 
 async function initializeMiniMeTokens() {
   let txn, res, event, value;
@@ -128,26 +128,44 @@ async function setupContracts() {
   console.log("6.8");
   await landRegistry.authorizeDeploy(owner.address);
 
-  console.log("6.9");
-  for (let index = 0; index < 6; index++) {
-    console.log("6.9.1");
-    await landRegistry.assignNewParcel(0, index, team.Robert);
-    console.log("6.9.2");
-    await landRegistry.assignNewParcel(1, index, team.Moughite);
-    console.log("6.9.3");
-    await landRegistry.assignNewParcel(2, index, team.Amine);
-    // await landRegistry.assignMultipleParcels([0, 0, 0], [0, 1, 2], team.Robert);
-    // // await landRegistry.authorizeDeploy(team.Moughite);
-    // await landRegistry.assignMultipleParcels([1, 1, 1], [0, 1, 2], team.Moughite);
-    // // await landRegistry.authorizeDeploy(team.Amine);
-    // await landRegistry.assignMultipleParcels([2, 2, 2], [0, 1, 2], team.Amine);
-  }
+  // console.log("6.9");
+  // for (let index = 0; index < 6; index++) {
+  //   console.log("6.9.1");
+  //   await landRegistry.assignNewParcel(0, index, team.Robert);
+  //   console.log("6.9.2");
+  //   await landRegistry.assignNewParcel(1, index, team.Moughite);
+  //   console.log("6.9.3");
+  //   await landRegistry.assignNewParcel(2, index, team.Amine);
+  //   // await landRegistry.assignMultipleParcels([0, 0, 0], [0, 1, 2], team.Robert);
+  //   // // await landRegistry.authorizeDeploy(team.Moughite);
+  //   // await landRegistry.assignMultipleParcels([1, 1, 1], [0, 1, 2], team.Moughite);
+  //   // // await landRegistry.authorizeDeploy(team.Amine);
+  //   // await landRegistry.assignMultipleParcels([2, 2, 2], [0, 1, 2], team.Amine);
+  // }
 
   // register balances
   // console.log("6.10");
   // await estateRegistry.registerBalance();
   // console.log("6.11");
   // await landRegistry.registerBalance();
+}
+
+async function saveAddresses() {
+  const fs = require("fs");
+
+  const addresses = {
+    Deployer: owner.address,
+    MiniMeTokenFactory: miniMeTokenFactory.address,
+    LandMiniMeToken: landMiniMeToken.address,
+    EStateMiniMeToken: estateMiniMeToken.address,
+    EStateRegistry: estateRegistry.address,
+    LandRegistry: landRegistry.address,
+  };
+  fs.writeFile("addresses.txt", addresses, function (err) {
+    if (err) {
+      console.log(err);
+    }
+  });
 }
 
 async function main() {
@@ -170,11 +188,6 @@ async function main() {
   await setupContracts();
 }
 
-async function check() {
-  const metadata = await landRegistry.landData(0, 1);
-  console.log("\n\n\n\n", metadata, "\n\n\n\n");
-}
-
 main()
   .then(() => {
     console.log(`Deployer address : ${owner.address}`);
@@ -184,7 +197,7 @@ main()
     console.log(`EStateRegistry address : ${estateRegistry.address}`);
     console.log(`LandRegistry address : ${landRegistry.address}`);
   })
-  .then(() => check())
+  .then(() => saveAddresses())
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;
