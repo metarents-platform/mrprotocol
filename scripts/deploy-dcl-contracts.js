@@ -1,6 +1,8 @@
 const { ethers, upgrades } = require("hardhat");
 const { BigNumber } = require("ethers");
 
+let txn;
+
 const team = {
   Robert: "0x237906fd2884235ed0F32DfE84cc89A97bB76249",
   Moughite: "0x5ca6Ff0784fcd11f2BA64B89f08404De56E8B2Fa",
@@ -13,10 +15,10 @@ let estateRegistry,
   miniMeTokenFactory,
   landRegistry;
 
-let owner, user;
+let owner;
 
 async function initializeMiniMeTokens() {
-  let txn, res, event, value;
+  let res, event, value;
 
   console.log("31");
   const MiniMeTokenFactory = await ethers.getContractFactory(
@@ -29,6 +31,8 @@ async function initializeMiniMeTokens() {
 
   console.log("33");
   await miniMeTokenFactory.deployed();
+
+  console.log(`MiniMeTokenFactory address : ${miniMeTokenFactory.address}`);
 
   console.log("34");
   txn = await miniMeTokenFactory.createCloneToken(
@@ -44,6 +48,8 @@ async function initializeMiniMeTokens() {
   [value] = event.args;
   landMiniMeToken = await MiniMeToken.attach(value);
 
+  console.log(`LandMiniMeToken address : ${landMiniMeToken.address}`);
+
   console.log(`35`);
   txn = await miniMeTokenFactory.createCloneToken(
     "0x0000000000000000000000000000000000000000",
@@ -57,6 +63,8 @@ async function initializeMiniMeTokens() {
   event = res.events.find((event) => event.event === "TokenCreated");
   [value] = event.args;
   estateMiniMeToken = await MiniMeToken.attach(value);
+
+  console.log(`EStateMiniMeToken address : ${estateMiniMeToken.address}`);
 }
 
 async function initializeLandRegistry() {
@@ -73,11 +81,14 @@ async function initializeLandRegistry() {
   console.log("43");
   await landRegistry.deployed();
 
+  console.log(`LandRegistry address : ${landRegistry.address}`);
+
   console.log("44");
   // await landRegistry.initialize(0x00);
 
   console.log("45");
-  await landRegistry.setLandBalanceToken(landMiniMeToken.address);
+  txn = await landRegistry.setLandBalanceToken(landMiniMeToken.address);
+  await txn.wait();
 }
 
 async function initializeEStateRegistry() {
@@ -89,7 +100,12 @@ async function initializeEStateRegistry() {
   );
   await estateRegistry.deployed();
 
-  await estateRegistry.setEstateLandBalanceToken(estateMiniMeToken.address);
+  console.log(`EStateRegistry address : ${estateRegistry.address}`);
+
+  txn = await estateRegistry.setEstateLandBalanceToken(
+    estateMiniMeToken.address
+  );
+  await txn.wait();
 }
 
 async function setupContracts() {
@@ -98,35 +114,49 @@ async function setupContracts() {
   //   user.address,
   //   BigNumber.from("1000000000000000000")
   // );
-  console.log("6.1");
-  await landMiniMeToken.generateTokens(
-    team.Robert,
-    BigNumber.from("1000000000000000000")
-  );
-  console.log("6.2");
-  await landMiniMeToken.generateTokens(
-    team.Moughite,
-    BigNumber.from("1000000000000000000")
-  );
-  console.log("6.3");
-  await landMiniMeToken.generateTokens(
-    team.Amine,
-    BigNumber.from("1000000000000000000")
-  );
+  // console.log("6.1");
+  // txn = await landMiniMeToken.generateTokens(
+  //   team.Robert,
+  //   BigNumber.from("1000000000000000000")
+  // );
+  // await txn.wait();
+  // console.log("6.2");
+  // txn = await landMiniMeToken.generateTokens(
+  //   team.Moughite,
+  //   BigNumber.from("1000000000000000000")
+  // );
+  // await txn.wait();
+  // console.log("6.3");
+  // txn = await landMiniMeToken.generateTokens(
+  //   team.Amine,
+  //   BigNumber.from("1000000000000000000")
+  // );
+  // await txn.wait();
 
-  // await estateMiniMeToken.generateTokens(user.address, BigNumber.from("2"));
-  console.log("6.4");
-  await estateMiniMeToken.generateTokens(team.Robert, BigNumber.from("2"));
-  console.log("6.5");
-  await estateMiniMeToken.generateTokens(team.Moughite, BigNumber.from("2"));
-  console.log("6.6");
-  await estateMiniMeToken.generateTokens(team.Amine, BigNumber.from("2"));
+  // // await estateMiniMeToken.generateTokens(user.address, BigNumber.from("2"));
+  // console.log("6.4");
+  // txn = await estateMiniMeToken.generateTokens(
+  //   team.Robert,
+  //   BigNumber.from("2")
+  // );
+  // await txn.wait();
+  // console.log("6.5");
+  // txn = await estateMiniMeToken.generateTokens(
+  //   team.Moughite,
+  //   BigNumber.from("2")
+  // );
+  // await txn.wait();
+  // console.log("6.6");
+  // txn = await estateMiniMeToken.generateTokens(team.Amine, BigNumber.from("2"));
+  // await txn.wait();
 
   // land registry setup
   console.log("6.7");
-  await landRegistry.setEstateRegistry(estateRegistry.address);
+  txn = await landRegistry.setEstateRegistry(estateRegistry.address);
+  await txn.wait();
   console.log("6.8");
-  await landRegistry.authorizeDeploy(owner.address);
+  txn = await landRegistry.authorizeDeploy(owner.address);
+  await txn.wait();
 
   // console.log("6.9");
   // for (let index = 0; index < 6; index++) {
@@ -145,11 +175,31 @@ async function setupContracts() {
   // await landRegistry.registerBalance();
 }
 
-async function main() {
-  console.log("1");
-  [owner, user] = await ethers.getSigners();
+async function saveAddresses() {
+  console.log("SAVING ADDRESSES NOW...");
+  const fs = require("fs");
 
-  console.log(owner.address, user.address);
+  const addresses = {
+    Deployer: owner.address,
+    MiniMeTokenFactory: miniMeTokenFactory.address,
+    LandMiniMeToken: landMiniMeToken.address,
+    EStateMiniMeToken: estateMiniMeToken.address,
+    EStateRegistry: estateRegistry.address,
+    LandRegistry: landRegistry.address,
+  };
+  fs.writeFile("./addresses.json", JSON.stringify(addresses), function (err) {
+    if (err) {
+      console.log(err);
+    }
+  });
+}
+
+async function main() {
+
+  console.log("1");
+  [owner] = await ethers.getSigners();
+
+  console.log(`Deployer address : ${owner.address}`);
 
   // console.log("2");
   // proxyAdmin = await upgrades.admin.getInstance();
@@ -167,21 +217,8 @@ async function main() {
   await setupContracts();
 }
 
-async function check() {
-  const metadata = await landRegistry.landData(0, 1);
-  console.log("\n\n\n\n", metadata, "\n\n\n\n");
-}
-
 main()
-  .then(() => {
-    console.log(`Deployer address : ${owner.address}`);
-    console.log(`MiniMeTokenFactory address : ${miniMeTokenFactory.address}`);
-    console.log(`LandMiniMeToken address : ${landMiniMeToken.address}`);
-    console.log(`EStateMiniMeToken address : ${estateMiniMeToken.address}`);
-    console.log(`EStateRegistry address : ${estateRegistry.address}`);
-    console.log(`LandRegistry address : ${landRegistry.address}`);
-  })
-  .then(() => check())
+  .then(() => saveAddresses())
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

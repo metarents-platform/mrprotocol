@@ -46,8 +46,8 @@ module.exports = {
       },
     ],
   },
-  // defaultNetwork: "rinkeby",
-  defaultNetwork: "local",
+  defaultNetwork: "rinkeby",
+  // defaultNetwork: "local",
   networks: {
     hardhat: {
       forking: {
@@ -77,6 +77,7 @@ module.exports = {
     },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
+      chainId: 4,
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },
