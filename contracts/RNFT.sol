@@ -5,8 +5,6 @@
 /// @title RNFT Contract
 /// @dev RNFT Contract is an ERC-721 implementation to manage lender RentNFTs (RNFTs) and rent operations
 
-import "hardhat/console.sol";
-
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -20,6 +18,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "./IRNFT.sol";
+import "./DCL/IDCL.sol";
 
 contract RNFT is
     Initializable,
@@ -39,9 +38,6 @@ contract RNFT is
         private _OwnerRTokenID;
     // RTokenId -> Renting
     mapping(uint256 => IRNFT.Renting) private _rmetadata;
-
-    // address of DCL LANDRegistry contract
-    address addressDCL;
 
     // < events newly added
     event Metadata_Generated(
@@ -99,12 +95,6 @@ contract RNFT is
         bytes calldata
     ) external virtual override returns (bytes4) {
         return this.onERC721Received.selector;
-    }
-
-    function setDCLAddress(address dcl) public onlyAdmin returns (bool) {
-        require(addressDCL != dcl, "DCL address already set!");
-        addressDCL = dcl;
-        return true;
     }
 
     function approveRenter(
@@ -240,7 +230,7 @@ contract RNFT is
     }
 
     /** Start rent agreement after confirmed payment  */
-    function startRent(uint256 originalNFTId, uint256 RTokenId) external virtual onlyAdmin {
+    function startRent(address assetRegistry, uint256 originalNFTId, uint256 RTokenId) external virtual onlyAdmin {
         // initiateRent()
         require(RTokenId != 0, "RNFT Token ID doesn't exist");
         require(!isRented(RTokenId), "NFT rental status: already rented");
@@ -252,7 +242,7 @@ contract RNFT is
         _rmetadata[RTokenId].isRented = true;
 
         // grant renter with DCL Operator rights
-        // IERC721(addressDCL).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
+        IDCL(assetRegistry).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
 
         emit Rent_Started(
             RTokenId,
@@ -262,7 +252,7 @@ contract RNFT is
         );
     }
 
-    function _terminateRent(uint256 RTokenId, uint256 originalNFTId, address caller)
+    function _terminateRent(address assetRegistry, uint256 RTokenId, uint256 originalNFTId, address caller)
         public virtual
         onlyAdmin
     {
@@ -280,7 +270,7 @@ contract RNFT is
         // Clear RNFT metadata
         clearRNFTState(RTokenId);
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        // IERC721(addressDCL).setUpdateOperator(originalNFTId, caller);
+        IDCL(assetRegistry).setUpdateOperator(originalNFTId, caller);
 
         emit Rent_Terminated(RTokenId, _rmetadata[RTokenId].isRented, _rmetadata[RTokenId].rentPrice);
     }
@@ -291,7 +281,7 @@ contract RNFT is
         uint256 oNftId,
         address originalNFTOwner
     ) public virtual onlyAdmin {
-        if (isRented(RTokenId)) _terminateRent(RTokenId, oNftId, originalNFTOwner);
+        if (isRented(RTokenId)) _terminateRent(nftAddress, RTokenId, oNftId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
         // this is already done by _terminateRent, so lemme comment this line
@@ -304,10 +294,10 @@ contract RNFT is
             oNftId
         );
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        // IERC721(addressDCL).setUpdateOperator(oNftId, originalNFTOwner);
+        // IDCL(nftAddress).setUpdateOperator(oNftId, originalNFTOwner);
     }
 
-    function _burnRNFT(uint256 _RTokenId) private {
+    function _burnRNFT(uint256 _RTokenId) public onlyAdmin {
         _burn(_RTokenId);
     }
 
@@ -385,6 +375,4 @@ contract RNFT is
         revokeRole(DEFAULT_ADMIN_ROLE, admin);
         //emit RNFTAdminRemoved(admin);
     }
-
-    function _burnRNFT() external override returns (uint256) {}
 }

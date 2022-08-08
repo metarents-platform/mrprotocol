@@ -1,4 +1,8 @@
 node_modules
+contracts/DCL/EstateRegistry.sol
+contracts/DCL/ITokenController.sol
+contracts/DCL/LANDRegistry.sol
+contracts/DCL/MiniMeToken.sol
 .env
 .openzeppelin
 coverage

@@ -6,8 +6,6 @@
 
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 /* ERC token contracts */
 // import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -70,6 +68,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /* Proxy upgradable constructor */
     function initialize(address rNFTContractAddress_, address payable treasuryAddress) public initializer {
+
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Ownable_init();
@@ -211,7 +210,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         distributePaymentTransactions(nftAddress, originalTokenId,_RNFT_tokenId, renterAddress);
         
         //Call startRent() function to change the rent status in RNFT (isRented=True) and calculate start/end time
-        rNFTCtrInstance.startRent(originalTokenId, _RNFT_tokenId);
+        rNFTCtrInstance.startRent(nftAddress, originalTokenId, _RNFT_tokenId);
 
         emit Rent_Confirmed_Paid(nftAddress, originalTokenId, _RNFT_tokenId);
         
@@ -257,7 +256,6 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             uint256 _renterBalance = 0;
 
             _renterBalance = erc20CtrInstance.balanceOf(_renterAddress);
-            console.log(totalRentPrice, _renterBalance);
             require(_renterBalance >= totalRentPrice, "Not enough balance to execute payment transaction");
             
             // // Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens.
@@ -320,7 +318,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        IRNFT(_RNFTContractAddress)._terminateRent(_RNFT_tokenId, oNftId, msg.sender);
+        IRNFT(_RNFTContractAddress)._terminateRent(nftAddress, _RNFT_tokenId, oNftId, msg.sender);
 
         emit Rent_Agreemeng_Terminated(nftAddress, oNftId, _RNFT_tokenId);
     }

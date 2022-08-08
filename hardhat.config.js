@@ -77,7 +77,6 @@ module.exports = {
     },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
-      chainId: 4,
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },
