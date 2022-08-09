@@ -1,7 +1,8 @@
 # MRProtocol
 
-MetaRents protocol is a fully decentralized NFT rental system to match NFT owners (lenders) with creators (renters).<br>
-MetaRents Marketplace aggregator is the implementation of the protocol that could be used by any NFT owner, creator, or business.
+MetaRents protocol is a collateral-free decentralized NFT renting protocol.<br>
+MetaRents Marketplace aggregator is the implementation of the protocol that could be used by any NFT owners, creators, or businesses.<br>
+Metarents protocol and marketplace allows owners to monetize NFTs by lending creators and businesses access to their utility.
 
 # MetaRents Protocol Rent Process
 
