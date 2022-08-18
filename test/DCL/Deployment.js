@@ -4,27 +4,21 @@ const { ethers, upgrades } = require("hardhat");
 describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, hacker, treasury, addrs;
+  let owner, hacker, addrs;
 
   beforeEach(async () => {
-    [owner, hacker, treasury, ...addrs] = await ethers.getSigners();
-
-    console.log(owner.address);
+    [owner, hacker, ...addrs] = await ethers.getSigners();
 
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
 
-    console.log(rNFT.address);
+    console.log(`RNFT deployed to : ${rNFT.address}`);
 
     Gateway = await ethers.getContractFactory("Gateway");
-    // console.log(Gateway);
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
-    console.log("deploying...");
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
   });
 

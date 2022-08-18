@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 // import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 //  Proxy upgradable contracts
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 // Access control RBAC
@@ -67,25 +67,29 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     // events newly added !>
 
     /* Proxy upgradable constructor */
-    function initialize(address rNFTContractAddress_, address payable treasuryAddress) public initializer {
+    function initialize(address rNFTContractAddress_) public initializer {
 
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Ownable_init();
+        
         // Add owner as administrator
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        // setNewAdmin(msg.sender); // => not callable because it's not admin yet
+
         // Add Proxy as administrator to delegate calls
-        // setNewAdmin(DEFAULT_ADMIN_ROLE, proxyAddress);
+        // setNewAdmin(address(this));  // => not callable because it's not admin yet
+        _setupRole(DEFAULT_ADMIN_ROLE, address(this));
         _RNFTContractAddress = rNFTContractAddress_;
+        
         // Set ETH & USDC as initial supported tokens after deployment
         address etherAddress = address(0);
         ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);    // rinkeby
         setSupportedPaymentTokens(etherAddress);
         setSupportedPaymentTokens(ERC20_USDCAddress);
-        // _DCL_MANATokenAddress = address(0x0F5D2fB29fb7d3CFeE444a200298f468908cC942);
-        setMarketGatewayTreasury(treasuryAddress);
+        setMarketGatewayTreasury(payable(0xa7E67CD92c83Ab73638F2F7Da600685b2152597C));
         /** Add whitelist for 1st 100 customers for discount 0% up to 1 year*/
-        setFee(10); // 10% platform service fee
+        setFee(1); // 10% platform service fee
         _maxRentDurationLimit = 31536000;
     }
 
@@ -120,6 +124,10 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 _rentPricePerTimeUnit,
         address _paymentMethod
     ) public _onlyApprovedOrOwner(nftAddress, original_nftId){
+
+        /** Check if given contract is ERC721-compatible */
+        // I commented because _onlyApprovedorOwner() modifier already reverts the txn in this case 
+        // require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
 
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
@@ -161,12 +169,12 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         uint256 rentDuration,
         address renter_address
     ) external nonReentrant returns(uint256){
-        require(renter_address != address(0), 'Invalid renter address: zero address');
+        require(renter_address != address(0), "Invalid renter address: zero address");
         Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[_NFTId];
         // Check if msg.sender is a registered lender and/or authorized to approve rent
         require(msg.sender==lendingRecord.lender,"unauthorized: address is not owner or lending not registered");
         // Check for same address
-        require(msg.sender != renter_address, 'Lender cannot be a renter');
+        require(msg.sender != renter_address, "Lender cannot be a renter");
         // Call initializeRentMetadata() to set initial NFT metadata and check approval status before final approval
         uint256 _rNftId = IRNFT(_RNFTContractAddress).initializeRentMetadata(msg.sender, nftAddress, _NFTId);
         // supply to RNFT contract NFT metadata to map it to its owner and RNFT metadata, and approve renter
@@ -257,13 +265,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
             _renterBalance = erc20CtrInstance.balanceOf(_renterAddress);
             require(_renterBalance >= totalRentPrice, "Not enough balance to execute payment transaction");
-            
-            // // Sets `totalRentPrice` as the allowance of `Gateway contract` over the caller's tokens.
-            // console.log("apprving...");
-            // success = erc20CtrInstance.approve(address(this), totalRentPrice); // change to SafeERC20
-            // require(success, "Allowance Approval failed");
-            // console.log("approved...");
-            
+                        
             // check if approved
             uint256 allowance = erc20CtrInstance.allowance(_renterAddress, address(this));
             require(allowance >= totalRentPrice, "Gateway not approved yet!");
@@ -307,13 +309,20 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     /// @dev to remove a NFT listing from the marketplace
     function removeLending(address nftAddress, uint256 nftId) public {
         require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
+        // check if it's rented, if so we can't remove lending
+        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, nftId);
+        if (_RNFT_tokenId != 0) {   // RNFT minted
+            require(!rNFTCtrInstance.isRented(_RNFT_tokenId), "ERROR: Rent not expired, ongoing rent duration");
+        }
         delete lendRegistry[nftAddress].lendingMap[nftId];
         emit NFT_Lending_Removed(msg.sender,nftAddress, nftId);
     }
 
-     // @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)
-    function terminateRentAgreement(address nftAddress, uint256 oNftId) public nonReentrant {
-        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender, "unauthorized: address is not owner or lending not registered");
+
+    /// @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)
+    function terminateRentAgreement(address nftAddress, uint256 oNftId) public nonReentrant{
+        require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
@@ -333,6 +342,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
         // call redeemNFT() to transfer NFT back to its owner
         IRNFT(_RNFTContractAddress)._redeemNFT(_RNFT_tokenId, nftAddress, oNftId, msg.sender);
+        // call removeLending() to delete lending record
+        removeLending(nftAddress, oNftId);
     }
 
 
@@ -372,7 +383,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     function setSupportedPaymentTokens(address tokenAddress) public onlyAdmin returns(address, string memory){
         // require(tokenAddress.supportsInterface(ERC20InterfaceId),"NOT_ERC20_TOKEN");
-        string memory tokenSymbol = string('ETH');
+        string memory tokenSymbol = string("ETH");
         if(tokenAddress != address(0)){
             tokenSymbol = ERC20(tokenAddress).symbol();
         }
@@ -390,15 +401,21 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     /** Gateway Contract Role-Based Access Control */
 
     ///@dev to add contract administrators such as the Proxy
-    function setNewAdmin(address _newAdmin) external onlyOwner{
+    function setNewAdmin(address _newAdmin) public onlyOwner{
         grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
         emit NewAdminAdded(_newAdmin);
     }
 
     ///@dev to remove an existing contract administrator
-    function removeAdmin(address _admin) external onlyOwner{
+    function removeAdmin(address _admin) public onlyOwner{
         revokeRole(DEFAULT_ADMIN_ROLE, _admin);
         emit AdminRemoved(_admin);
+    }
+
+    ///@dev to check whether the given contract is ERC721-compatible
+    function isERC721Compatible(address _contract) public view returns(bool) {
+        bytes4 IID_IERC721 = type(IERC721).interfaceId;
+        return IERC165(_contract).supportsInterface(IID_IERC721);
     }
 
 }

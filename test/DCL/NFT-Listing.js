@@ -53,38 +53,50 @@ Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[original_nftId
 describe("Add a new lending to list the NFT in the marketplace and store lending metadata", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, other, treasury, addrs;
+  let owner, other;
 
   /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
 
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
 
-    [owner, other, treasury, ...addrs] = await ethers.getSigners();
+    [owner, other] = await ethers.getSigners();
 
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
 
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
   });
 
   describe("Listing should be added to the registry!", () => {
-    const NFT_ADDRESS = "0x473279aBbc630d2Cc0b7d5019A1E5f3Ee139755E"; // Smol Runners
-    const ORIGINAL_NFT_ID = 1;
+    const NFT_ADDRESS = "0xC1436f5788eAeE05B9523A2051117992cF6e22d8"; // LANDRegistry
+    const ORIGINAL_NFT_ID = 64;
     const MAX_DURATION = 3;
     const MIN_DURATION = 1;
     const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
     const RENT_PRICE_PER_TIMEUNIT = 500;
     const ETH_ADDRESS = ethers.utils.hexZeroPad("0x00", 20); // zero address for ETH
 
-    beforeEach(async () => {});
+    // it("Should be reverted with message 'Contract is not ERC721-compatible' unless the given contract is ERC721", async () => {
+    //   await expect(
+    //     gateway
+    //       .connect(other) // sign the txn with another wallet
+    //       .createLendRecord(
+    //         ETH_ADDRESS,
+    //         ORIGINAL_NFT_ID,
+    //         MAX_DURATION * ONE_MONTH,
+    //         MIN_DURATION * ONE_MONTH,
+    //         ONE_MONTH,
+    //         RENT_PRICE_PER_TIMEUNIT,
+    //         ETH_ADDRESS
+    //       )
+    //   ).to.be.revertedWith("Contract is not ERC721-compatible");
+    // });
 
     it("Should be reverted with message 'Only owner or operator is allowed' unless you're the owner/operator", async () => {
       await expect(

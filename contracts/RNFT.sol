@@ -285,7 +285,7 @@ contract RNFT is
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
         // this is already done by _terminateRent, so lemme comment this line
-        // delete _rmetadata[RTokenId];
+        delete _rmetadata[RTokenId];
         // Check if burnRNFt should be called in approveRenter (first if branch)
         _burnRNFT(RTokenId); // Burn RNFT only on Redeem
         IERC721(nftAddress).safeTransferFrom(
@@ -294,7 +294,7 @@ contract RNFT is
             oNftId
         );
         // revokes the renter's operating status on the original NFT. DECENTRALAND
-        // IDCL(nftAddress).setUpdateOperator(oNftId, originalNFTOwner);
+        IDCL(nftAddress).setUpdateOperator(oNftId, originalNFTOwner);
     }
 
     function _burnRNFT(uint256 _RTokenId) public onlyAdmin {
@@ -312,11 +312,11 @@ contract RNFT is
 
     function clearRNFTState(uint256 RTokenId) public onlyAdmin returns (bool) {
         // Clear/invalidate the preminted rnft metadata mapping
-        delete _rmetadata[RTokenId];
-        // _rmetadata[RTokenId].isRented = false;
-        // _rmetadata[RTokenId].rentPrice = 0;
-        // _rmetadata[RTokenId].approvedRentPeriod = 0;
-        // _rmetadata[RTokenId].approvedRenter = address(0);
+        // delete _rmetadata[RTokenId];
+        _rmetadata[RTokenId].isRented = false;
+        _rmetadata[RTokenId].rentPrice = 0;
+        _rmetadata[RTokenId].approvedRentPeriod = 0;
+        _rmetadata[RTokenId].approvedRenter = address(0);
         return true;
     }
 
