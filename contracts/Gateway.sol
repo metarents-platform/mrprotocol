@@ -227,7 +227,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     }
 
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    internal payable returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
+    internal returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t-- 
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20

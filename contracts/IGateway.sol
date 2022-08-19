@@ -50,11 +50,10 @@ interface IGateway {
         address renter_address
     ) external returns(uint256 _rNftId);
 
-    function _approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId) internal returns (uint256);
+    // function _approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId) internal returns (uint256);
     function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId) external payable returns (uint256 _RNFT_tokenId);
     
-    function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    internal payable returns (uint256 totalRentPrice,uint256 _serviceFee);
+    // function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress) internal payable returns (uint256 totalRentPrice,uint256 _serviceFee);
     
     function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) external returns(bool);
     function getLending(address nftAddress,uint256 nftId) external view returns (Lending memory lendingData);

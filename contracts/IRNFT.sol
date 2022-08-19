@@ -28,7 +28,7 @@ interface IRNFT {
     function initializeRentMetadata(address originalOwner, address nftAddress,uint256 oTokenId) external returns (uint256);
     function approveRenter(uint256 timeUnitSec,uint256 rentDuration,uint256 timeUnitPrice,address approvedRenter, uint256 _RTokenId) external returns (uint256);
     // function approveRenter(address orignalOwner,address nftAddress,uint256 oTokenId,uint256 timeUnitSec,uint256 rentDuration,uint256 timeUnitPrice,address approvedRenter) external returns (uint256);
-    function preMintRNFT() internal returns(uint256);
+    // function preMintRNFT() external returns(uint256);
     function _mintRNFT(address nftAddress, address originalOwner, uint256 oTokenId, uint256 _RTokenId) external returns (uint256);
     function startRent(address assetRegistry, uint256 originalNFTId, uint256 RTokenId) external;
     function _terminateRent(address assetRegistry, uint256 RTokenId, uint256 originalNFTId, address caller) external;
