@@ -224,7 +224,7 @@ contract RNFT is
     }
 
     /** Start rent agreement after confirmed payment  */
-    function startRent(address assetRegistry, uint256 originalNFTId, uint256 RTokenId) external virtual onlyAdmin {
+    function startRent(address assetRegistry, uint256 originalNFTId, uint256 RTokenId) external onlyAdmin {
         // initiateRent()
         require(RTokenId != 0, "RNFT Token ID doesn't exist");
         require(!isRented(RTokenId), "NFT rental status: already rented");
@@ -245,7 +245,7 @@ contract RNFT is
     }
 
     function _terminateRent(address assetRegistry, uint256 RTokenId, uint256 originalNFTId, address caller)
-        public virtual
+        public
         onlyAdmin
     {
         require(RTokenId != 0, "RNFT Token ID doesn't exist");
@@ -272,7 +272,7 @@ contract RNFT is
         address nftAddress,
         uint256 oNftId,
         address originalNFTOwner
-    ) public virtual onlyAdmin {
+    ) public onlyAdmin {
         if (isRented(RTokenId)) _terminateRent(nftAddress, RTokenId, oNftId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;

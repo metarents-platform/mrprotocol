@@ -200,7 +200,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /// @dev confirm rent agreement and pay rent fee to market beneficiary
     function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId)
-    external virtual payable returns (uint256 _RNFT_tokenId){
+    external payable returns (uint256 _RNFT_tokenId){
         require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         address renterAddress = msg.sender;
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[originalTokenId];
@@ -226,8 +226,8 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         return _RNFT_tokenId;
     }
 
-    function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    internal returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
+    function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress) 
+    internal nonReentrant returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t-- 
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
@@ -251,10 +251,11 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
             
             // Send `rentPriceAfterFee` ETH to `lender wallet address`
             (success, ) = payable(_lendRecord.lender).call{value: rentPriceAfterFee}("");
+            require(success, "Failed to send to the Lender!!!");
             // Send `serviceFee` ETH to `treasury wallet address`
             (success, ) = payable(_treasuryAddress).call{value: serviceFeeAmount}("");
+            require(success, "Failed to send to the Treasury!!!");
 
-            require(success, "Transfer 1 to lender (beneficiary) - failed");
             // Send changes back to the renter
             if (totalRentPrice < msg.value) {
                 changeAfterPayment = SafeMathUpgradeable.sub(msg.value, totalRentPrice);
