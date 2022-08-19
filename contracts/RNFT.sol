@@ -105,7 +105,6 @@ contract RNFT is
         uint256 _RTokenId
     ) external onlyAdmin returns (uint256) {
         // Calculate the approved rent period in seconds
-        // uint256 approvedRentPeriod = SafeMathUpgradeable.mul(timeUnitSec,rentDuration);
         uint256 approvedRentPeriod = rentDuration;
 
         // Check if the time limit is respected
@@ -136,7 +135,7 @@ contract RNFT is
         return _RTokenId;
     }
 
-    function preMintRNFT() public onlyAdmin returns (uint256) {
+    function preMintRNFT() internal returns (uint256) {
         // Don't mint if the RNFT is already in the contract
         // Generate the RNFT Token ID
         _RtokenIds.increment();
@@ -180,7 +179,7 @@ contract RNFT is
         address originalOwner,
         address nftAddress,
         uint256 oTokenId
-    ) external returns (uint256) {
+    ) external onlyAdmin returns (uint256) {
         // initialise RNFT Token ID
         uint256 RTokenId = _OwnerRTokenID[originalOwner][nftAddress][oTokenId];
         // Create an instance of the original NFT's contract
@@ -214,15 +213,10 @@ contract RNFT is
         }
         // Map the owner's original NFT to the RNFT
         _OwnerRTokenID[nftAddress][originalOwner][oTokenId] = RTokenId;
-        // 5
         _rmetadata[RTokenId].originalOwner = originalOwner;
-        // _rmetadata[RTokenId].nftAddress = nftAddress;
-        // _rmetadata[RTokenId].oTokenId = oTokenId;
 
         emit Metadata_Generated(
             _rmetadata[RTokenId].originalOwner,
-            // _rmetadata[RTokenId].nftAddress,
-            // _rmetadata[RTokenId].oTokenId,
             _OwnerRTokenID[nftAddress][originalOwner][oTokenId]
         );
 
@@ -236,9 +230,7 @@ contract RNFT is
         require(!isRented(RTokenId), "NFT rental status: already rented");
         uint256 _now = block.timestamp;
         _rmetadata[RTokenId].rStartTime = _now;
-        _rmetadata[RTokenId].rEndTime =
-            _now +
-            _rmetadata[RTokenId].approvedRentPeriod;
+        _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
         _rmetadata[RTokenId].isRented = true;
 
         // grant renter with DCL Operator rights

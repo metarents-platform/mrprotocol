@@ -76,7 +76,6 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         // Add owner as administrator
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // setNewAdmin(msg.sender); // => not callable because it's not admin yet
-
         // Add Proxy as administrator to delegate calls
         // setNewAdmin(address(this));  // => not callable because it's not admin yet
         _setupRole(DEFAULT_ADMIN_ROLE, address(this));
@@ -89,7 +88,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         setSupportedPaymentTokens(ERC20_USDCAddress);
         setMarketGatewayTreasury(payable(0xa7E67CD92c83Ab73638F2F7Da600685b2152597C));
         /** Add whitelist for 1st 100 customers for discount 0% up to 1 year*/
-        setFee(1); // 10% platform service fee
+        setFee(1); // 1% platform service fee for test purpose
         _maxRentDurationLimit = 31536000;
     }
 
@@ -170,6 +169,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         address renter_address
     ) external nonReentrant returns(uint256){
         require(renter_address != address(0), "Invalid renter address: zero address");
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[_NFTId];
         // Check if msg.sender is a registered lender and/or authorized to approve rent
         require(msg.sender==lendingRecord.lender,"unauthorized: address is not owner or lending not registered");
@@ -187,7 +187,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     /// @dev to approve a renter by supplying 'renter_address' and !!'rent_duration'!! to RNFT Contract
     /// @dev RNFT contract maps the RNFT to its metadata
     function _approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId)
-    public returns (uint256 _RNFT_tokenId){
+    internal returns (uint256 _RNFT_tokenId){
         Lending storage lendingRecord = lendRegistry[nftAddress].lendingMap[oNftId];
         require(lendingRecord.timeUnit > 0, "not listed for lending yet");
         require(rentDuration % lendingRecord.timeUnit == 0," Invalid rent duration: not seconds");
@@ -201,6 +201,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     /// @dev confirm rent agreement and pay rent fee to market beneficiary
     function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId)
     external virtual payable returns (uint256 _RNFT_tokenId){
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         address renterAddress = msg.sender;
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[originalTokenId];
         address _lender = _lendRecord.lender;
@@ -226,7 +227,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     }
 
     function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress)
-    public payable returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
+    internal payable returns (uint256 totalRentPrice,uint256 serviceFeeAmount){
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t-- 
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
@@ -285,9 +286,9 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
     /// @dev to cancel a renter approval if renter doesn't confirm and pay rent in X hours time after approval
     function cancelApproval(address nftAddress, uint256 nftId, address renterAddress)
     public returns(bool isApprovalCanceled){
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         // Check if msg.sender is a registered lender and/or authorized to approve rent
         require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
-
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress,msg.sender,nftId);
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
@@ -308,6 +309,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /// @dev to remove a NFT listing from the marketplace
     function removeLending(address nftAddress, uint256 nftId) public {
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         require(msg.sender==lendRegistry[nftAddress].lendingMap[nftId].lender,"unauthorized: address is not owner or lending not registered");
         // check if it's rented, if so we can't remove lending
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
@@ -319,9 +321,9 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
         emit NFT_Lending_Removed(msg.sender,nftAddress, nftId);
     }
 
-
     /// @dev terminate rent without redeeming original NFT (RNFT is burned and assosicated metadata is deleted)
     function terminateRentAgreement(address nftAddress, uint256 oNftId) public nonReentrant{
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender,"unauthorized: address is not owner or lending not registered");
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, oNftId);
@@ -334,6 +336,7 @@ OwnableUpgradeable, IGateway /*, ERC20Upgradeable */{
 
     /// @dev terminate rent and redeem original NFT
     function redeemNFT(address nftAddress, uint256 oNftId) public nonReentrant{
+        require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
         require(msg.sender==lendRegistry[nftAddress].lendingMap[oNftId].lender, "unauthorized: address is not owner or lending not registered");
         //(nftAddress != address(0) && oNftId != 0) &&
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
