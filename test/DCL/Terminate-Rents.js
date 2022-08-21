@@ -143,6 +143,7 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
 
         console.log("terminating");
         // check
+        console.log("checking");
         await expect(
           rNFT
             .connect(other)

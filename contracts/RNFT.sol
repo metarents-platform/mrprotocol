@@ -29,6 +29,9 @@ contract RNFT is
     OwnableUpgradeable,
     IRNFT
 {
+    // Create a new role identifier for the admin role
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
     // RNFT Token IDs
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _RtokenIds;
@@ -76,6 +79,7 @@ contract RNFT is
         // Add owner as administrator
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // Add Proxy as administrator to delegate calls
+        _setupRole(DEFAULT_ADMIN_ROLE, address(this));
         // setNewAdmin(DEFAULT_ADMIN_ROLE, proxyAddress);
     }
 

@@ -51,7 +51,7 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.RINKEBY_URL,
+        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
         allowUnlimitedContractSize: true,
       },
     },
@@ -64,25 +64,25 @@ module.exports = {
     },
 
     ethereum: {
-      url: process.env.ETHEREUM_URL || "",
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },
     },
     ropsten: {
-      url: process.env.ROPSTEN_URL || "",
+      url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },
     },
     rinkeby: {
-      url: process.env.RINKEBY_URL || "",
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },
     },
     goerli: {
-      url: process.env.GOERLI_URL || "",
+      url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
       accounts: {
         mnemonic: process.env.MNEMONIC,
       },

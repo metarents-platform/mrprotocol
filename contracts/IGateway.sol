@@ -74,4 +74,7 @@ interface IGateway {
     function setNewAdmin(address _newAdmin) external;
     function removeAdmin(address _admin) external;
 
+    /** Fee-related methods */
+    function withdrawRentFunds(address nftAddress, uint256 tokenID) external returns(bool) ;
+
 }
