@@ -45,6 +45,7 @@ contract Gateway is
     //_registerInterface(interfaceId);
     using SafeERC20Upgradeable for ERC20;
     using SafeMathUpgradeable for uint256;
+
     // change to enum TimeUnit {DAY, WEEK, MONTH};
     // Time Unit constants
     uint256 private constant DAY_IN_SECONDS = 86400;
@@ -52,6 +53,7 @@ contract Gateway is
     uint256 private constant MONTH_IN_SECONDS = 2628000;
 
     address private ERC20_USDCAddress;
+    address private constant ETHER_ADDRESS = address(1);
     address[] internal supportedPaymentTokens;
 
     /// @dev lending record mapping each owner to his lendings - lendRegistry
@@ -61,9 +63,20 @@ contract Gateway is
     address payable private _treasuryAddress;
     uint256 private _maxRentDurationLimit; // max rent duration limit 1 year
 
-    // rent fee balances for each lender (rent fee for reach token is stored)
-    // lender address => (token address => fee)
-    mapping(address => mapping(address => uint256)) private rentFeeBalance;
+    // (payment method) => balance
+    mapping (address => uint256) private protocolBalance;
+    // (RNFT id) => (withdrawn / not)
+    mapping (uint256 => bool) private rentBalanceFlag;
+
+    enum WithdrawError {
+        Success,
+        NotMinted,
+        NotRented,
+        AlreadyWithdrawn,
+        PriceZero,
+        TranferFailed,
+        PermissionDenied
+    }
 
     // < events newly added
     event NFT_Lending_Added(
@@ -107,7 +120,7 @@ contract Gateway is
         uint256 rTokenId,
         uint256 totalRentPrice,
         uint256 serviceFee,
-        uint256 rentPriceAfterFee,
+        // uint256 rentPriceAfterFee,
         uint256 changeAfterPayment
     );
     event Supported_Payment_Method_Added(
@@ -136,15 +149,15 @@ contract Gateway is
         // Add owner as administrator
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // setNewAdmin(msg.sender); // => not callable because it's not admin yet
+
         // Add Proxy as administrator to delegate calls
         // setNewAdmin(address(this));  // => not callable because it's not admin yet
         _setupRole(DEFAULT_ADMIN_ROLE, address(this));
         _RNFTContractAddress = rNFTContractAddress_;
 
         // Set ETH & USDC as initial supported tokens after deployment
-        address etherAddress = address(0);
         ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926); // rinkeby
-        setSupportedPaymentTokens(etherAddress);
+        setSupportedPaymentTokens(ETHER_ADDRESS);
         setSupportedPaymentTokens(ERC20_USDCAddress);
         setMarketGatewayTreasury(
             payable(0xa7E67CD92c83Ab73638F2F7Da600685b2152597C)
@@ -408,40 +421,25 @@ contract Gateway is
         returns (uint256 totalRentPrice, uint256 serviceFeeAmount)
     {
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t--
-        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[
-            nftId
-        ];
+        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
-        ERC20 erc20CtrInstance = ERC20(_lendRecord.acceptedPaymentMethod);
+        
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         // Rent price calculation or getRentPrice(_RNFT_tokenId)
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
         totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
         /** Transaction to be sent to MarketGatewaytreasury wallet */
-        serviceFeeAmount = SafeMathUpgradeable.div(
-            SafeMathUpgradeable.mul(totalRentPrice, getFee()),
-            1e2
-        ); // totalRentPrice * _fee / 100
-        // Transaction to be sent to beneficiary (NFT Lender)
-        uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(
-            totalRentPrice,
-            serviceFeeAmount
-        );
+        (uint256 serviceFeeAmount, ) = calculateServiceFees(totalRentPrice);
         // Change (in case of ETH) remained after payment
         uint256 changeAfterPayment = 0;
 
         // accmulate fee balances
-        rentFeeBalance[_lendRecord.lender][
-            _lendRecord.acceptedPaymentMethod
-        ] += rentPriceAfterFee;
-        rentFeeBalance[_treasuryAddress][
-            _lendRecord.acceptedPaymentMethod
-        ] += serviceFeeAmount;
+        // _lendRecord.rentBalance += rentPriceAfterFee;
+        protocolBalance[_lendRecord.acceptedPaymentMethod] += serviceFeeAmount;
 
         bool success = false;
 
-        if (_lendRecord.acceptedPaymentMethod == address(0)) {
-            // ETH
+        if (_lendRecord.acceptedPaymentMethod == ETHER_ADDRESS) {   // Ether
             require(
                 msg.value >= totalRentPrice,
                 "Not enough ETH paid to execute transaction"
@@ -463,11 +461,11 @@ contract Gateway is
                 (success, ) = payable(_renterAddress).call{
                     value: changeAfterPayment
                 }("");
-                require(success, "Transfer 2 to renter (changes) - failed");
+                require(success, "Transfer to renter (changes) - failed");
             }
-        } else {
-            // ERC20
+        } else {    // ERC20
             uint256 _renterBalance = 0;
+            ERC20 erc20CtrInstance = ERC20(_lendRecord.acceptedPaymentMethod);
 
             _renterBalance = erc20CtrInstance.balanceOf(_renterAddress);
             require(
@@ -503,7 +501,7 @@ contract Gateway is
             _RNFT_tokenId,
             totalRentPrice,
             serviceFeeAmount,
-            rentPriceAfterFee,
+            // rentPriceAfterFee,
             changeAfterPayment
         );
     }
@@ -702,7 +700,7 @@ contract Gateway is
     {
         // require(tokenAddress.supportsInterface(ERC20InterfaceId),"NOT_ERC20_TOKEN");
         string memory tokenSymbol = string("ETH");
-        if (tokenAddress != address(0)) {
+        if (tokenAddress != ETHER_ADDRESS) {
             tokenSymbol = ERC20(tokenAddress).symbol();
         }
         require(
@@ -746,92 +744,198 @@ contract Gateway is
     }
 
     /** Fee-related methods */
+    function _withdraw(address nftAddress, uint256 tokenID) internal returns (WithdrawError) {
+
+        (address paymentMethod, address lender) = getPaymentInfo(nftAddress, tokenID);
+
+        if (msg.sender != lender)   return WithdrawError.PermissionDenied;
+        
+        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+
+        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
+        if (_RNFT_tokenId == 0)                         return WithdrawError.NotMinted;
+        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawError.AlreadyWithdrawn;
+        if (rNFTCtrInstance.isRented(_RNFT_tokenId))    return WithdrawError.NotRented;
+        
+        // Rent price calculation (both serviceFee and rent balance)
+        uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
+        if ( totalRentPrice == 0 )  return WithdrawError.PriceZero;
+        (uint256 serviceFeeAmount, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
+
+        // first, set balance to zero (to avoid re-entrancy)
+        rentBalanceFlag[_RNFT_tokenId] = true;
+        // and then, trasnfer to the lender
+        bool success;
+        if (paymentMethod == ETHER_ADDRESS) {  // Ether
+            (success, ) = payable(lender).call{value: rentPriceAfterFee}("");
+        } else {    // ERC20
+            ERC20 paymentToken = ERC20(paymentMethod);
+            success = paymentToken.transferFrom(address(this), lender, rentPriceAfterFee);
+        }
+        if ( !success ) {
+            rentBalanceFlag[_RNFT_tokenId] = false;
+            return WithdrawError.TranferFailed;
+        }
+        return WithdrawError.Success;
+    }
+    // function _withdraw(address withdrawer, address paymentMethod, uint256 balance) internal returns (bool) {
+    //     require(
+    //         hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || 
+    //         hasRole(DEFAULT_ADMIN_ROLE, withdrawer) || 
+    //         msg.sender == withdrawer, 
+    //         "Invalid withdrawer");
+    //     require(balance > 0, "Invalid rent balance parameter");
+
+    //     // first, set balance to zero (to avoid re-entrancy)
+    //     rentFeeBalance[withdrawer][paymentMethod] = 0;
+    //     // and then, trasnfer to the lender
+    //     bool success;
+    //     if (paymentMethod == ETHER_ADDRESS) {  // Ether
+    //         (success, ) = payable(withdrawer).call{value: fee}("");
+    //     } else {    // ERC20
+    //         ERC20 paymentToken = ERC20(paymentMethod);
+    //         success = paymentToken.transferFrom(address(this), withdrawer, fee);
+    //     }
+    //     if ( !success )
+    //         rentFeeBalance[withdrawer][paymentMethod] = fee;
+    //     require(success, "Withdraw failed");
+    //     return success;
+    // }
+
     ///@dev to withdraw fee for a certain token
-    function getPaymentMethod(address nftAddress, uint256 tokenID)
+    function getPaymentInfo(address nftAddress, uint256 tokenID)
         internal
         view
-        returns (address)
+        returns (address, address)
     {
-        Lending memory _lendRecord = lendRegistry[nftAddress].lendingMap[
-            tokenID
-        ];
+        Lending memory _lendRecord = lendRegistry[nftAddress].lendingMap[tokenID];
         address paymentMethod = _lendRecord.acceptedPaymentMethod;
-        require(paymentMethod != address(0), "Payment method not set");
-        return paymentMethod;
+        require(paymentMethod != address(0), "No payment method");
+        return (paymentMethod, _lendRecord.lender);
     }
 
     ///@dev to withdraw fee for a certain lending
     function withdrawRentFund(address nftAddress, uint256 tokenID)
-        external
+        external nonReentrant
         returns (bool)
     {
-        address paymentMethod = getPaymentMethod(nftAddress, tokenID);
-        uint256 fee = rentFeeBalance[msg.sender][paymentMethod];
-        // first, set balance to zero (to avoid re-entrancy)
-        rentFeeBalance[msg.sender][paymentMethod] = 0;
-        // and then, trasnfer to the lender
-        (bool success, ) = msg.sender.call{value: fee}("");
-        if ( !success )
-            rentFeeBalance[msg.sender][paymentMethod] = fee;
-        require(success, "Withdraw failed");
+        WithdrawError res = _withdraw(nftAddress, tokenID);
+        require(res != WithdrawError.PermissionDenied, "Invalid withdrawer");
+        require(res != WithdrawError.NotMinted, "RNFT not minted");
+        require(res != WithdrawError.NotRented, "NFT not on rent");
+        require(res != WithdrawError.AlreadyWithdrawn, "Already withdrawn!");
+        require(res != WithdrawError.PriceZero, "No balance to withdraw");
+        require(res != WithdrawError.TranferFailed, "Transfer failed");
         return true;
     }
 
     ///@dev to withdraw fee for multiple lendings
+    ///return: [0,length) => error (indicating the index where error occurs), otherwise, success
     function withdrawRentFunds(
         address[] calldata nftAddresses,
         uint256[] calldata tokenIDs
-    ) external returns (bool) {
+    ) external nonReentrant returns (uint256) {
         require(nftAddresses.length == tokenIDs.length, "Invalid input data");
-        for (uint256 i = 0; i < nftAddresses.length; i++) {
-            address paymentMethod = getPaymentMethod(
-                nftAddresses[i],
-                tokenIDs[i]
-            );
-            uint256 fee = rentFeeBalance[msg.sender][paymentMethod];
-            // first, set balance to zero (to avoid re-entrancy)
-            rentFeeBalance[msg.sender][paymentMethod] = 0;
-            // and then, trasnfer to the lender
-            (bool success, ) = msg.sender.call{value: fee}("");
-            if ( !success )
-                rentFeeBalance[msg.sender][paymentMethod] = fee;
-            require(success, "Withdraw failed");
+        uint256 i;
+        for (i = 0; i < nftAddresses.length; i++) {
+            if (_withdraw(nftAddresses[i], tokenIDs[i]) != WithdrawError.Success)
+                break;
+        }
+        return i;
+    }
+
+    ///@dev to withdraw fee for a certain token
+    function claimProtocolFee(address paymentMethod)
+        external
+        onlyAdmin
+        returns (bool)
+    {
+        require(protocolBalance[paymentMethod] > 0, "No balance to claim");
+        uint256 balance = protocolBalance[paymentMethod];
+        // first, set balance to zero (to avoid re-entrancy)
+        protocolBalance[paymentMethod] = 0;
+        // and then, trasnfer to the treasury
+        bool success;
+        if (paymentMethod == ETHER_ADDRESS) {  // Ether
+            (success, ) = payable(_treasuryAddress).call{value: balance}("");
+        } else {    // ERC20
+            ERC20 paymentToken = ERC20(paymentMethod);
+            success = paymentToken.transferFrom(address(this), _treasuryAddress, balance);
+        }
+        if ( !success ) {
+            protocolBalance[paymentMethod] = balance;
+            revert("Claim failed!!!");
         }
         return true;
     }
 
     ///@dev to withdraw fee for a certain lending
-    function claimProtocolFee(address nftAddress, uint256 tokenID)
-        external
-        onlyAdmin
-        returns (bool)
-    {
-        address paymentMethod = getPaymentMethod(nftAddress, tokenID);
-        uint256 fee = rentFeeBalance[_treasuryAddress][paymentMethod];
-        rentFeeBalance[_treasuryAddress][paymentMethod] = 0;
-        (bool success, ) = payable(_treasuryAddress).call{value: fee}("");
-        if (!success)   rentFeeBalance[_treasuryAddress][paymentMethod] = fee;
-        require(success, "Protocol Withdraw failed");
-        return true;
-    }
+    // function claimProtocolFee(address nftAddress, uint256 tokenID)
+    //     external
+    //     onlyAdmin
+    //     returns (bool)
+    // {
+    //     address paymentMethod = getPaymentMethod(nftAddress, tokenID);
+    //     require(_withdraw(_treasuryAddress, paymentMethod), "Protocol withdraw failed");
+    //     return true;
+    // }
 
     ///@dev to withdraw fee for multiple lendings
+    // function claimProtocolFees(
+    //     address[] calldata nftAddresses,
+    //     uint256[] calldata tokenIDs
+    // ) external returns (bool) {
+    //     require(nftAddresses.length == tokenIDs.length, "Invalid input data");
+    //     for (uint256 i = 0; i < nftAddresses.length; i++) {
+    //         address paymentMethod = getPaymentMethod(
+    //             nftAddresses[i],
+    //             tokenIDs[i]
+    //         );
+    //         require(_withdraw(_treasuryAddress, paymentMethod), "Protocol withdraw failed!");
+    //     }
+    //     return true;
+    // }
+
+    ///@dev to withdraw fee for multiple tokens
+    ///return: [0,length) => error (indicating the index where error occurs), otherwise, success
     function claimProtocolFees(
-        address[] calldata nftAddresses,
-        uint256[] calldata tokenIDs
-    ) external returns (bool) {
-        require(nftAddresses.length == tokenIDs.length, "Invalid input data");
-        for (uint256 i = 0; i < nftAddresses.length; i++) {
-            address paymentMethod = getPaymentMethod(
-                nftAddresses[i],
-                tokenIDs[i]
-            );
-            uint256 fee = rentFeeBalance[_treasuryAddress][paymentMethod];
-            rentFeeBalance[_treasuryAddress][paymentMethod] = 0;
-            (bool success, ) = payable(_treasuryAddress).call{value: fee}("");
-            if (!success)   rentFeeBalance[_treasuryAddress][paymentMethod] = fee;
-            require(success, "Protocol Withdraw failed");
+        address[] calldata paymentMethods
+    ) external returns (uint256) {
+        uint256 i;
+        for (i = 0; i < paymentMethods.length; i++) {
+            address paymentMethod = paymentMethods[i];
+            if(protocolBalance[paymentMethod] == 0) continue;
+
+            uint256 balance = protocolBalance[paymentMethod];
+            // first, set balance to zero (to avoid re-entrancy)
+            protocolBalance[paymentMethod] = 0;
+            // and then, trasnfer to the treasury
+            bool success;
+            if (paymentMethod == ETHER_ADDRESS) {  // Ether
+                (success, ) = payable(_treasuryAddress).call{value: balance}("");
+            } else {    // ERC20
+                ERC20 paymentToken = ERC20(paymentMethod);
+                success = paymentToken.transferFrom(address(this), _treasuryAddress, balance);
+            }
+            if ( !success ) {
+                protocolBalance[paymentMethod] = balance;
+                break;
+            }
         }
-        return true;
+        return i;
+    }
+
+    function calculateServiceFees(uint256 amount) internal view returns (uint256, uint256) {
+        // rent balance for the protocol (treasury)
+        uint256 serviceFeeAmount = SafeMathUpgradeable.div(
+            SafeMathUpgradeable.mul(amount, getFee()),
+            1e2
+        ); // amount * _fee / 100
+        // rent balance for the beneficiary
+        uint256 rentPriceAfterFee = SafeMathUpgradeable.sub(
+            amount,
+            serviceFeeAmount
+        );
+        return (serviceFeeAmount, rentPriceAfterFee);
     }
 }
