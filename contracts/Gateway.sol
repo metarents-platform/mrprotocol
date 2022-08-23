@@ -68,15 +68,9 @@ contract Gateway is
     // (RNFT id) => (withdrawn / not)
     mapping (uint256 => bool) private rentBalanceFlag;
 
-    enum WithdrawError {
-        Success,
-        NotMinted,
-        NotRented,
-        AlreadyWithdrawn,
-        PriceZero,
-        TranferFailed,
-        PermissionDenied
-    }
+    // Rate Limit Pattern (bot withdrawal prevention)
+    // (wallet address) => (withdraw enabled time)
+    // mapping (address => uint256) withdrawalEnabledAt;
 
     // < events newly added
     event NFT_Lending_Added(
@@ -166,6 +160,13 @@ contract Gateway is
         setFee(1); // 1% platform service fee for test purpose
         _maxRentDurationLimit = 31536000;
     }
+
+    // @dev verifier to check if withdrawal is valid (in terms of rate limit)
+    // modifier enabledEvery(uint256 rateLimit) {
+    //     require(block.timestamp > withdrawalEnabledAt[msg.sender], "Too frequent withdraw request");
+    //     withdrawalEnabledAt[msg.sender] = block.timestamp + rateLimit;
+    //     _;
+    // }
 
     // @dev verifier to check for authorisated administrators
     modifier onlyAdmin() {
@@ -429,7 +430,7 @@ contract Gateway is
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
         totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
         /** Transaction to be sent to MarketGatewaytreasury wallet */
-        (uint256 serviceFeeAmount, ) = calculateServiceFees(totalRentPrice);
+        (serviceFeeAmount, ) = calculateServiceFees(totalRentPrice);
         // Change (in case of ETH) remained after payment
         uint256 changeAfterPayment = 0;
 
@@ -744,23 +745,36 @@ contract Gateway is
     }
 
     /** Fee-related methods */
-    function _withdraw(address nftAddress, uint256 tokenID) internal returns (WithdrawError) {
+    function isAssetRentBalanceWithdrawable(address nftAddress, uint256 tokenID, address lender) internal view returns (IGateway.WithdrawError) {
+        
+        if (msg.sender != lender)   return WithdrawError.PermissionDenied;
+
+        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
+
+        if (_RNFT_tokenId == 0)                         return WithdrawError.NotMinted;
+        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawError.AlreadyWithdrawn;
+        if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawError.NotRented;
+
+        return WithdrawError.Success;
+    }
+
+    function _withdraw(address nftAddress, uint256 tokenID) internal returns (IGateway.WithdrawError) {
 
         (address paymentMethod, address lender) = getPaymentInfo(nftAddress, tokenID);
 
         if (msg.sender != lender)   return WithdrawError.PermissionDenied;
         
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
-
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
-        if (_RNFT_tokenId == 0)                         return WithdrawError.NotMinted;
-        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawError.AlreadyWithdrawn;
-        if (rNFTCtrInstance.isRented(_RNFT_tokenId))    return WithdrawError.NotRented;
-        
+
+        WithdrawError res = isAssetRentBalanceWithdrawable(nftAddress, tokenID, lender);
+        if (res != WithdrawError.Success)   return res;
+
         // Rent price calculation (both serviceFee and rent balance)
         uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
-        if ( totalRentPrice == 0 )  return WithdrawError.PriceZero;
-        (uint256 serviceFeeAmount, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
+        if ( totalRentPrice == 0 )  return WithdrawError.ZeroBalance;
+        (, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
 
         // first, set balance to zero (to avoid re-entrancy)
         rentBalanceFlag[_RNFT_tokenId] = true;
@@ -774,8 +788,9 @@ contract Gateway is
         }
         if ( !success ) {
             rentBalanceFlag[_RNFT_tokenId] = false;
-            return WithdrawError.TranferFailed;
+            return WithdrawError.TransferFailed;
         }
+
         return WithdrawError.Success;
     }
     // function _withdraw(address withdrawer, address paymentMethod, uint256 balance) internal returns (bool) {
@@ -820,12 +835,12 @@ contract Gateway is
         returns (bool)
     {
         WithdrawError res = _withdraw(nftAddress, tokenID);
-        require(res != WithdrawError.PermissionDenied, "Invalid withdrawer");
-        require(res != WithdrawError.NotMinted, "RNFT not minted");
-        require(res != WithdrawError.NotRented, "NFT not on rent");
-        require(res != WithdrawError.AlreadyWithdrawn, "Already withdrawn!");
-        require(res != WithdrawError.PriceZero, "No balance to withdraw");
-        require(res != WithdrawError.TranferFailed, "Transfer failed");
+        require(res != WithdrawError.PermissionDenied, "Unauthorized caller: invalid withdrawer");
+        require(res != WithdrawError.NotMinted, "RNFT-ID not found");
+        require(res != WithdrawError.NotRented, "NFT rental status: not rented");
+        require(res != WithdrawError.AlreadyWithdrawn, "Rent balance was already withdrawn!");
+        require(res != WithdrawError.ZeroBalance, "Zero Balance");
+        require(res != WithdrawError.TransferFailed, "Rent balance withdrawal failed");
         return true;
     }
 
@@ -834,14 +849,19 @@ contract Gateway is
     function withdrawRentFunds(
         address[] calldata nftAddresses,
         uint256[] calldata tokenIDs
-    ) external nonReentrant returns (uint256) {
-        require(nftAddresses.length == tokenIDs.length, "Invalid input data");
-        uint256 i;
-        for (i = 0; i < nftAddresses.length; i++) {
-            if (_withdraw(nftAddresses[i], tokenIDs[i]) != WithdrawError.Success)
-                break;
+    ) external nonReentrant returns (WithdrawError[] memory) {
+        require(nftAddresses.length == tokenIDs.length, "Invalid input data: different array length");
+        WithdrawError[] memory results = new WithdrawError[](nftAddresses.length);
+        
+        for (uint256 i = 0; i < nftAddresses.length; i++) {
+
+            results[i] = isAssetRentBalanceWithdrawable(nftAddresses[i], tokenIDs[i], msg.sender);
+        
+            if (results[i] == WithdrawError.Success) {
+                results[i] = _withdraw(nftAddresses[i], tokenIDs[i]);
+            }
         }
-        return i;
+        return results;
     }
 
     ///@dev to withdraw fee for a certain token
@@ -900,17 +920,23 @@ contract Gateway is
     ///return: [0,length) => error (indicating the index where error occurs), otherwise, success
     function claimProtocolFees(
         address[] calldata paymentMethods
-    ) external returns (uint256) {
-        uint256 i;
-        for (i = 0; i < paymentMethods.length; i++) {
-            address paymentMethod = paymentMethods[i];
-            if(protocolBalance[paymentMethod] == 0) continue;
+    ) onlyAdmin external returns (bool[] memory) {
+        
+        address paymentMethod;
+        uint256 balance;
+        bool[] memory results = new bool[](paymentMethods.length);
+        bool success;
 
-            uint256 balance = protocolBalance[paymentMethod];
+        for (uint256 i = 0; i < paymentMethods.length; i++) {
+            paymentMethod = paymentMethods[i];
+
+            if (!isSupportedPaymentToken(paymentMethod))    continue;
+            if (protocolBalance[paymentMethod] == 0)        continue;
+
+            balance = protocolBalance[paymentMethod];
             // first, set balance to zero (to avoid re-entrancy)
             protocolBalance[paymentMethod] = 0;
             // and then, trasnfer to the treasury
-            bool success;
             if (paymentMethod == ETHER_ADDRESS) {  // Ether
                 (success, ) = payable(_treasuryAddress).call{value: balance}("");
             } else {    // ERC20
@@ -919,10 +945,10 @@ contract Gateway is
             }
             if ( !success ) {
                 protocolBalance[paymentMethod] = balance;
-                break;
             }
+            results[i] = success;
         }
-        return i;
+        return results;
     }
 
     function calculateServiceFees(uint256 amount) internal view returns (uint256, uint256) {

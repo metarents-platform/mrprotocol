@@ -29,9 +29,6 @@ contract RNFT is
     OwnableUpgradeable,
     IRNFT
 {
-    // Create a new role identifier for the admin role
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
     // RNFT Token IDs
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _RtokenIds;

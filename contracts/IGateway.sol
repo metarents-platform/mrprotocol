@@ -18,6 +18,17 @@ interface IGateway {
     // /// @dev lendRecord struct to store lendingMap
     struct lendRecord{
         mapping (uint256=>Lending) lendingMap;
+
+    }
+
+    enum WithdrawError {
+        Success,
+        NotMinted,
+        NotRented,
+        AlreadyWithdrawn,
+        ZeroBalance,
+        TransferFailed,
+        PermissionDenied
     }
 
     // struct NFTRoyalty {
@@ -76,10 +87,10 @@ interface IGateway {
 
     /** Fee-related methods */
     function withdrawRentFund(address nftAddress, uint256 tokenID) external returns (bool);
-    function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(uint256);
+    function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(WithdrawError[] memory);
     
     function claimProtocolFee(address paymentMethod) external returns (bool);
     // function claimProtocolFee(address nftAddress, uint256 tokenID) external returns (bool);
     // function claimProtocolFees(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns (bool);
-    function claimProtocolFees(address[] calldata paymentMethods) external returns (uint256);
+    function claimProtocolFees(address[] calldata paymentMethods) external returns (bool[] memory);
 }
