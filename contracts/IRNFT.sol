@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 interface IRNFT {
 
-    // RNFT Metadata
+    ///@dev RNFT Metadata
     struct Renting{
         address originalOwner;
         // Boolean indicating if the NFT is rented

@@ -411,16 +411,8 @@ contract Gateway is
         return _RNFT_tokenId;
     }
 
-    function distributePaymentTransactions(
-        address nftAddress,
-        uint256 nftId,
-        uint256 _RNFT_tokenId,
-        address _renterAddress
-    )
-        internal
-        nonReentrant
-        returns (uint256 totalRentPrice, uint256 serviceFeeAmount)
-    {
+    function distributePaymentTransactions(address nftAddress, uint256 nftId, uint256 _RNFT_tokenId, address _renterAddress) 
+    internal nonReentrant returns (uint256 totalRentPrice, uint256 serviceFeeAmount){
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t--
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
@@ -445,13 +437,6 @@ contract Gateway is
                 msg.value >= totalRentPrice,
                 "Not enough ETH paid to execute transaction"
             );
-
-            // // Send `rentPriceAfterFee` ETH to `lender wallet address`
-            // (success, ) = payable(_lendRecord.lender).call{value: rentPriceAfterFee}("");
-            // require(success, "Failed to send to the Lender!!!");
-            // // Send `serviceFee` ETH to `treasury wallet address`
-            // (success, ) = payable(_treasuryAddress).call{value: serviceFeeAmount}("");
-            // require(success, "Failed to send to the Treasury!!!");
 
             // Send changes back to the renter
             if (totalRentPrice < msg.value) {
@@ -660,10 +645,7 @@ contract Gateway is
         return _fee;
     }
 
-    function setMarketGatewayTreasury(address payable treasuryAddress)
-        public
-        onlyAdmin
-    {
+    function setMarketGatewayTreasury(address payable treasuryAddress) public onlyAdmin{
         _treasuryAddress = treasuryAddress;
     }
 
@@ -671,20 +653,12 @@ contract Gateway is
         _maxRentDurationLimit = mdl;
     }
 
-    function getSupportedPaymentTokens()
-        public
-        view
-        returns (address[] memory)
-    {
+    function getSupportedPaymentTokens() public view returns (address[] memory){
         return supportedPaymentTokens;
     }
 
     // change to Modifier !!
-    function isSupportedPaymentToken(address tokenAddress)
-        public
-        view
-        returns (bool)
-    {
+    function isSupportedPaymentToken(address tokenAddress) public view returns (bool){
         for (uint256 i = 0; i < supportedPaymentTokens.length; i++) {
             if (tokenAddress == supportedPaymentTokens[i]) {
                 return true;
@@ -694,11 +668,7 @@ contract Gateway is
         return false;
     }
 
-    function setSupportedPaymentTokens(address tokenAddress)
-        public
-        onlyAdmin
-        returns (address, string memory)
-    {
+    function setSupportedPaymentTokens(address tokenAddress) public onlyAdmin returns (address, string memory){
         // require(tokenAddress.supportsInterface(ERC20InterfaceId),"NOT_ERC20_TOKEN");
         string memory tokenSymbol = string("ETH");
         if (tokenAddress != ETHER_ADDRESS) {
@@ -713,70 +683,43 @@ contract Gateway is
         return (tokenAddress, tokenSymbol);
     }
 
-    // Check if supported Interface implementation is correct
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(AccessControlUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-
-    /** Gateway Contract Role-Based Access Control */
-
-    ///@dev to add contract administrators such as the Proxy
-    function setNewAdmin(address _newAdmin) public onlyOwner {
-        grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
-        emit NewAdminAdded(_newAdmin);
-    }
-
-    ///@dev to remove an existing contract administrator
-    function removeAdmin(address _admin) public onlyOwner {
-        revokeRole(DEFAULT_ADMIN_ROLE, _admin);
-        emit AdminRemoved(_admin);
-    }
-
-    ///@dev to check whether the given contract is ERC721-compatible
-    function isERC721Compatible(address _contract) public view returns (bool) {
-        bytes4 IID_IERC721 = type(IERC721).interfaceId;
-        return IERC165(_contract).supportsInterface(IID_IERC721);
-    }
-
-    /** Fee-related methods */
-    function isAssetRentBalanceWithdrawable(address nftAddress, uint256 tokenID, address lender) internal view returns (IGateway.WithdrawError) {
+    /** Rent & Protocol Fees withdrawal-related methods */
+    function isAssetRentBalanceWithdrawable(address nftAddress, uint256 tokenID) 
+    internal view returns (IGateway.WithdrawMsg){
         
-        if (msg.sender != lender)   return WithdrawError.PermissionDenied;
-
-        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
-        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
-
-        if (_RNFT_tokenId == 0)                         return WithdrawError.NotMinted;
-        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawError.AlreadyWithdrawn;
-        if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawError.NotRented;
-
-        return WithdrawError.Success;
-    }
-
-    function _withdraw(address nftAddress, uint256 tokenID) internal returns (IGateway.WithdrawError) {
-
         (address paymentMethod, address lender) = getPaymentInfo(nftAddress, tokenID);
 
-        if (msg.sender != lender)   return WithdrawError.PermissionDenied;
-        
+        if (msg.sender != lender)   return WithdrawMsg.PermissionDenied;
+
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
 
-        WithdrawError res = isAssetRentBalanceWithdrawable(nftAddress, tokenID, lender);
-        if (res != WithdrawError.Success)   return res;
+        if (_RNFT_tokenId == 0)                         return WithdrawMsg.NotMinted;
+        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawMsg.AlreadyWithdrawn;
+        if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawMsg.NotRented;
+
+        return WithdrawMsg.Success;
+    }
+
+    ///@dev main routine to withdraw fees for a specific NFT lending
+    ///@return: WithdrawMsg enum => (indicating the WithdrawMsg type for each NFT asset) => values: error or success
+    function _withdraw(address nftAddress, uint256 tokenID) internal returns (IGateway.WithdrawMsg) {
+        
+        WithdrawMsg res = isAssetRentBalanceWithdrawable(nftAddress, tokenID);
+        if (res != WithdrawMsg.Success)   return res;
+
+        // assign the lender (= msg.sender) since check was already done in isAssetRentBalanceWithdrawable() and WithdrawMsg.PermissionDenied was not thrown 
+        address lender = msg.sender;
+
+        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, tokenID);
 
         // Rent price calculation (both serviceFee and rent balance)
         uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
-        if ( totalRentPrice == 0 )  return WithdrawError.ZeroBalance;
+        if ( totalRentPrice == 0 )  return WithdrawMsg.ZeroBalance;
         (, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
 
-        // first, set balance to zero (to avoid re-entrancy)
+        // first, set rent balance flag to true (to avoid re-entrancy)
         rentBalanceFlag[_RNFT_tokenId] = true;
         // and then, trasnfer to the lender
         bool success;
@@ -788,88 +731,56 @@ contract Gateway is
         }
         if ( !success ) {
             rentBalanceFlag[_RNFT_tokenId] = false;
-            return WithdrawError.TransferFailed;
+            return WithdrawMsg.TransferFailed;
         }
 
-        return WithdrawError.Success;
+        return WithdrawMsg.Success;
     }
-    // function _withdraw(address withdrawer, address paymentMethod, uint256 balance) internal returns (bool) {
-    //     require(
-    //         hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || 
-    //         hasRole(DEFAULT_ADMIN_ROLE, withdrawer) || 
-    //         msg.sender == withdrawer, 
-    //         "Invalid withdrawer");
-    //     require(balance > 0, "Invalid rent balance parameter");
 
-    //     // first, set balance to zero (to avoid re-entrancy)
-    //     rentFeeBalance[withdrawer][paymentMethod] = 0;
-    //     // and then, trasnfer to the lender
-    //     bool success;
-    //     if (paymentMethod == ETHER_ADDRESS) {  // Ether
-    //         (success, ) = payable(withdrawer).call{value: fee}("");
-    //     } else {    // ERC20
-    //         ERC20 paymentToken = ERC20(paymentMethod);
-    //         success = paymentToken.transferFrom(address(this), withdrawer, fee);
-    //     }
-    //     if ( !success )
-    //         rentFeeBalance[withdrawer][paymentMethod] = fee;
-    //     require(success, "Withdraw failed");
-    //     return success;
-    // }
-
-    ///@dev to withdraw fee for a certain token
-    function getPaymentInfo(address nftAddress, uint256 tokenID)
-        internal
-        view
-        returns (address, address)
-    {
+    ///@dev to get NFT payment data (lender and paymentMethod)
+    function getPaymentInfo(address nftAddress, uint256 tokenID) internal view returns (address, address){
         Lending memory _lendRecord = lendRegistry[nftAddress].lendingMap[tokenID];
         address paymentMethod = _lendRecord.acceptedPaymentMethod;
         require(paymentMethod != address(0), "No payment method");
         return (paymentMethod, _lendRecord.lender);
     }
 
-    ///@dev to withdraw fee for a certain lending
+    ///@dev to withdraw fee for a specific  lending
     function withdrawRentFund(address nftAddress, uint256 tokenID)
         external nonReentrant
-        returns (bool)
+        returns (IGateway.WithdrawMsg)
     {
-        WithdrawError res = _withdraw(nftAddress, tokenID);
-        require(res != WithdrawError.PermissionDenied, "Unauthorized caller: invalid withdrawer");
-        require(res != WithdrawError.NotMinted, "RNFT-ID not found");
-        require(res != WithdrawError.NotRented, "NFT rental status: not rented");
-        require(res != WithdrawError.AlreadyWithdrawn, "Rent balance was already withdrawn!");
-        require(res != WithdrawError.ZeroBalance, "Zero Balance");
-        require(res != WithdrawError.TransferFailed, "Rent balance withdrawal failed");
-        return true;
+        WithdrawMsg res = _withdraw(nftAddress, tokenID);
+        require(res != WithdrawMsg.PermissionDenied, "Unauthorized caller: invalid withdrawer");
+        require(res != WithdrawMsg.NotMinted, "RNFT-ID not found");
+        require(res != WithdrawMsg.NotRented, "NFT rental status: not rented");
+        require(res != WithdrawMsg.AlreadyWithdrawn, "Rent balance was already withdrawn!");
+        require(res != WithdrawMsg.ZeroBalance, "Zero Balance");
+        require(res != WithdrawMsg.TransferFailed, "Rent balance withdrawal failed");
+        return res;
     }
 
-    ///@dev to withdraw fee for multiple lendings
-    ///return: [0,length) => error (indicating the index where error occurs), otherwise, success
+    ///@dev to withdraw rent fee for multiple lendings
+    ///@return: array of WithdrawMsg => (indicating the WithdrawMsg enum for each NFT asset) => values: error or success
     function withdrawRentFunds(
         address[] calldata nftAddresses,
         uint256[] calldata tokenIDs
-    ) external nonReentrant returns (WithdrawError[] memory) {
+    ) external nonReentrant returns (WithdrawMsg[] memory) {
         require(nftAddresses.length == tokenIDs.length, "Invalid input data: different array length");
-        WithdrawError[] memory results = new WithdrawError[](nftAddresses.length);
+        WithdrawMsg[] memory results = new WithdrawMsg[](nftAddresses.length);
         
         for (uint256 i = 0; i < nftAddresses.length; i++) {
-
-            results[i] = isAssetRentBalanceWithdrawable(nftAddresses[i], tokenIDs[i], msg.sender);
-        
-            if (results[i] == WithdrawError.Success) {
-                results[i] = _withdraw(nftAddresses[i], tokenIDs[i]);
-            }
+            // results[i] = isAssetRentBalanceWithdrawable(nftAddresses[i], tokenIDs[i], msg.sender);
+            // if (results[i] == WithdrawMsg.Success) {
+            results[i] = _withdraw(nftAddresses[i], tokenIDs[i]);
+            // }
         }
         return results;
     }
 
     ///@dev to withdraw fee for a certain token
-    function claimProtocolFee(address paymentMethod)
-        external
-        onlyAdmin
-        returns (bool)
-    {
+    ///@return bool: ( true = transaction succeeded, false = transaction failed)
+    function claimProtocolFee(address paymentMethod) external nonReentrant onlyAdmin returns (bool){
         require(protocolBalance[paymentMethod] > 0, "No balance to claim");
         uint256 balance = protocolBalance[paymentMethod];
         // first, set balance to zero (to avoid re-entrancy)
@@ -884,44 +795,14 @@ contract Gateway is
         }
         if ( !success ) {
             protocolBalance[paymentMethod] = balance;
-            revert("Claim failed!!!");
+            revert("Something went wrong, claiming protocol fee transcation failed!!!");
         }
         return true;
     }
 
-    ///@dev to withdraw fee for a certain lending
-    // function claimProtocolFee(address nftAddress, uint256 tokenID)
-    //     external
-    //     onlyAdmin
-    //     returns (bool)
-    // {
-    //     address paymentMethod = getPaymentMethod(nftAddress, tokenID);
-    //     require(_withdraw(_treasuryAddress, paymentMethod), "Protocol withdraw failed");
-    //     return true;
-    // }
-
-    ///@dev to withdraw fee for multiple lendings
-    // function claimProtocolFees(
-    //     address[] calldata nftAddresses,
-    //     uint256[] calldata tokenIDs
-    // ) external returns (bool) {
-    //     require(nftAddresses.length == tokenIDs.length, "Invalid input data");
-    //     for (uint256 i = 0; i < nftAddresses.length; i++) {
-    //         address paymentMethod = getPaymentMethod(
-    //             nftAddresses[i],
-    //             tokenIDs[i]
-    //         );
-    //         require(_withdraw(_treasuryAddress, paymentMethod), "Protocol withdraw failed!");
-    //     }
-    //     return true;
-    // }
-
     ///@dev to withdraw fee for multiple tokens
-    ///return: [0,length) => error (indicating the index where error occurs), otherwise, success
-    function claimProtocolFees(
-        address[] calldata paymentMethods
-    ) onlyAdmin external returns (bool[] memory) {
-        
+    ///@return results bool array => (true = transaction succeeded, false = transaction failed)
+    function claimProtocolFees(address[] calldata paymentMethods) external nonReentrant onlyAdmin returns (bool[] memory) {
         address paymentMethod;
         uint256 balance;
         bool[] memory results = new bool[](paymentMethods.length);
@@ -930,8 +811,8 @@ contract Gateway is
         for (uint256 i = 0; i < paymentMethods.length; i++) {
             paymentMethod = paymentMethods[i];
 
-            if (!isSupportedPaymentToken(paymentMethod))    continue;
-            if (protocolBalance[paymentMethod] == 0)        continue;
+            if (!isSupportedPaymentToken(paymentMethod))  continue;
+            if (protocolBalance[paymentMethod] == 0)      continue;
 
             balance = protocolBalance[paymentMethod];
             // first, set balance to zero (to avoid re-entrancy)
@@ -964,4 +845,31 @@ contract Gateway is
         );
         return (serviceFeeAmount, rentPriceAfterFee);
     }
+
+    // Check if supported Interface implementation is correct
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable) returns (bool){
+        return super.supportsInterface(interfaceId);
+    }
+
+    /** Gateway Contract Role-Based Access Control */
+
+    ///@dev to add contract administrators such as the Proxy
+    function setNewAdmin(address _newAdmin) public onlyOwner {
+        grantRole(DEFAULT_ADMIN_ROLE, _newAdmin);
+        emit NewAdminAdded(_newAdmin);
+    }
+
+    ///@dev to remove an existing contract administrator
+    function removeAdmin(address _admin) public onlyOwner {
+        revokeRole(DEFAULT_ADMIN_ROLE, _admin);
+        emit AdminRemoved(_admin);
+    }
+
+    ///@dev to check whether the given contract is ERC721-compatible
+    function isERC721Compatible(address _contract) public view returns (bool) {
+        bytes4 IID_IERC721 = type(IERC721).interfaceId;
+        return IERC165(_contract).supportsInterface(IID_IERC721);
+    }
+
+    
 }

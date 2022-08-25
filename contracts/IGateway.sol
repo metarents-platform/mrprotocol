@@ -21,7 +21,7 @@ interface IGateway {
 
     }
 
-    enum WithdrawError {
+    enum WithdrawMsg {
         Success,
         NotMinted,
         NotRented,
@@ -31,7 +31,7 @@ interface IGateway {
         PermissionDenied
     }
 
-    // struct NFTRoyalty {
+    // struct assetRoyalty {
     //     uint256 fee;
     //     uint256 balance;
     //     address beneficiary;
@@ -88,9 +88,7 @@ interface IGateway {
     /** Fee-related methods */
     function withdrawRentFund(address nftAddress, uint256 tokenID) external returns (bool);
     function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(WithdrawError[] memory);
-    
+
     function claimProtocolFee(address paymentMethod) external returns (bool);
-    // function claimProtocolFee(address nftAddress, uint256 tokenID) external returns (bool);
-    // function claimProtocolFees(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns (bool);
     function claimProtocolFees(address[] calldata paymentMethods) external returns (bool[] memory);
 }
