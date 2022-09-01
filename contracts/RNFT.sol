@@ -233,6 +233,7 @@ contract RNFT is
         _rmetadata[RTokenId].rStartTime = _now;
         _rmetadata[RTokenId].rEndTime = _now + _rmetadata[RTokenId].approvedRentPeriod;
         _rmetadata[RTokenId].isRented = true;
+        _rmetadata[RTokenId].isRentBalanceWithdrawn = false;
 
         // grant renter with DCL Operator rights
         IDCL(assetRegistry).setUpdateOperator(originalNFTId, _rmetadata[RTokenId].approvedRenter);
@@ -274,6 +275,7 @@ contract RNFT is
         uint256 oNftId,
         address originalNFTOwner
     ) public onlyAdmin {
+        require (_rmetadata[RTokenId].isRentBalanceWithdrawn, "Funds not withdrawn yet");
         if (isRented(RTokenId)) _terminateRent(nftAddress, RTokenId, oNftId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
@@ -367,5 +369,15 @@ contract RNFT is
     function _removeAdmin(address admin) external onlyOwner {
         revokeRole(DEFAULT_ADMIN_ROLE, admin);
         //emit RNFTAdminRemoved(admin);
+    }
+
+    ///@dev to set withdraw flag for RNFT (lending)
+    function setWithdrawFlag(uint256 rTokenId) external onlyOwner {
+        _rmetadata[rTokenId].isRentBalanceWithdrawn = true;
+    }    
+
+    ///@dev to get  withdraw flag for RNFT (lending)
+    function isWithdrawn(uint256 rTokenId) external view returns (bool) {
+        return _rmetadata[rTokenId].isRentBalanceWithdrawn;
     }
 }

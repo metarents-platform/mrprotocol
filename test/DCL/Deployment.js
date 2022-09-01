@@ -45,7 +45,7 @@ describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
     });
 
     it("ETH should be listed as the supported token", async () => {
-      const ETH_ADDRESS = ethers.utils.hexZeroPad("0x00", 20); // zero address for ETH
+      const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
       expect(await gateway.isSupportedPaymentToken(ETH_ADDRESS)).to.equal(true);
     });
 

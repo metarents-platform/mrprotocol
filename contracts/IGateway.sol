@@ -86,8 +86,8 @@ interface IGateway {
     function removeAdmin(address _admin) external;
 
     /** Fee-related methods */
-    function withdrawRentFund(address nftAddress, uint256 tokenID) external returns (bool);
-    function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(WithdrawError[] memory);
+    function withdrawRentFund(address nftAddress, uint256 tokenID) external returns (WithdrawMsg);
+    function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(WithdrawMsg[] memory);
 
     function claimProtocolFee(address paymentMethod) external returns (bool);
     function claimProtocolFees(address[] calldata paymentMethods) external returns (bool[] memory);

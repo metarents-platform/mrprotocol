@@ -20,6 +20,8 @@ interface IRNFT {
         uint256 rEndTime;
         // nonce to check if RNFT is minted or not
         bool mintNonce;
+        // boolean indicating if the rent balance is withdrawn or not
+        bool isRentBalanceWithdrawn;
     }
 
     event RNFTNewAdminAdded(address newAdmin);
@@ -48,4 +50,7 @@ interface IRNFT {
     /** RNFT Contract Role-based Access Control */
     function _setNewAdmin(address newAdmin) external;
     function _removeAdmin(address admin) external;
+
+    function setWithdrawFlag(uint256 rTokenId) external;
+    function isWithdrawn(uint256 rTokenId) external view returns (bool);
 }

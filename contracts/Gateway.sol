@@ -27,6 +27,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 import "./IRNFT.sol";
 import "./IGateway.sol";
 
+import "hardhat/console.sol";
 
 contract Gateway is
     Initializable,
@@ -65,8 +66,8 @@ contract Gateway is
 
     // (payment method) => balance
     mapping (address => uint256) private protocolBalance;
-    // (RNFT id) => (withdrawn / not)
-    mapping (uint256 => bool) private rentBalanceFlag;
+    // (RNFT id) => (withdrawable balance)
+    mapping (uint256 => uint256) private rentBalance;
 
     // Rate Limit Pattern (bot withdrawal prevention)
     // (wallet address) => (withdraw enabled time)
@@ -130,6 +131,13 @@ contract Gateway is
         address nftAddress,
         uint256 orignal_tokenId,
         uint256 RNFT_tokenId
+    );
+    event Rent_Fee_Withdrawn(
+        address lender, 
+        address nftAddress, 
+        uint256 tokenID, 
+        address paymentMethod,
+        uint256 withdrawBalance
     );
 
     // events newly added !>
@@ -412,7 +420,7 @@ contract Gateway is
     }
 
     function distributePaymentTransactions(address nftAddress, uint256 nftId, uint256 _RNFT_tokenId, address _renterAddress) 
-    internal nonReentrant returns (uint256 totalRentPrice, uint256 serviceFeeAmount){
+    internal nonReentrant {
         // add cases (ether native, other supported 20 tokens) -- h@ckk 1t--
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         // Add check for which accepted payment is made: ETH, ERC20
@@ -420,16 +428,11 @@ contract Gateway is
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         // Rent price calculation or getRentPrice(_RNFT_tokenId)
         // totalRentPrice = _lendRecord.rentPrice * rentDuration; // Use SafeMath for uint256
-        totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
+        uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
         /** Transaction to be sent to MarketGatewaytreasury wallet */
-        (serviceFeeAmount, ) = calculateServiceFees(totalRentPrice);
+        (uint256 serviceFeeAmount, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
         // Change (in case of ETH) remained after payment
         uint256 changeAfterPayment = 0;
-
-        // accmulate fee balances
-        // _lendRecord.rentBalance += rentPriceAfterFee;
-        protocolBalance[_lendRecord.acceptedPaymentMethod] += serviceFeeAmount;
-
         bool success = false;
 
         if (_lendRecord.acceptedPaymentMethod == ETHER_ADDRESS) {   // Ether
@@ -482,6 +485,11 @@ contract Gateway is
             // success = erc20CtrInstance.transferFrom(_renterAddress, _treasuryAddress, serviceFeeAmount);
             // require(success, "Transfer 2 to treasury - failed");
         }
+
+        // accmulate fee balances
+        // _lendRecord.rentBalance += rentPriceAfterFee;
+        protocolBalance[_lendRecord.acceptedPaymentMethod] += serviceFeeAmount;
+        rentBalance[_RNFT_tokenId] = rentPriceAfterFee;
 
         emit Payment_Distributed(
             _RNFT_tokenId,
@@ -623,6 +631,8 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
+        // check if rent balance is already withdrawn
+        require(rentBalance[_RNFT_tokenId] == 0, "Funds for this lending are not claimed yet");
         // call redeemNFT() to transfer NFT back to its owner
         IRNFT(_RNFTContractAddress)._redeemNFT(
             _RNFT_tokenId,
@@ -687,7 +697,7 @@ contract Gateway is
     function isAssetRentBalanceWithdrawable(address nftAddress, uint256 tokenID) 
     internal view returns (IGateway.WithdrawMsg){
         
-        (address paymentMethod, address lender) = getPaymentInfo(nftAddress, tokenID);
+        (, address lender) = getPaymentInfo(nftAddress, tokenID);
 
         if (msg.sender != lender)   return WithdrawMsg.PermissionDenied;
 
@@ -695,44 +705,53 @@ contract Gateway is
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, lender, tokenID);
 
         if (_RNFT_tokenId == 0)                         return WithdrawMsg.NotMinted;
-        if (rentBalanceFlag[_RNFT_tokenId])             return WithdrawMsg.AlreadyWithdrawn;
-        if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawMsg.NotRented;
+        if (rNFTCtrInstance.isWithdrawn(_RNFT_tokenId)) return WithdrawMsg.AlreadyWithdrawn;
+        if (rentBalance[_RNFT_tokenId] == 0)            return WithdrawMsg.ZeroBalance;
+        // if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawMsg.NotRented;
 
         return WithdrawMsg.Success;
     }
 
     ///@dev main routine to withdraw fees for a specific NFT lending
-    ///@return: WithdrawMsg enum => (indicating the WithdrawMsg type for each NFT asset) => values: error or success
+    ///@return WithdrawMsg enum => (indicating the WithdrawMsg type for each NFT asset) => values: error or success
     function _withdraw(address nftAddress, uint256 tokenID) internal returns (IGateway.WithdrawMsg) {
+
+        console.log("_withdraw");
         
         WithdrawMsg res = isAssetRentBalanceWithdrawable(nftAddress, tokenID);
         if (res != WithdrawMsg.Success)   return res;
 
         // assign the lender (= msg.sender) since check was already done in isAssetRentBalanceWithdrawable() and WithdrawMsg.PermissionDenied was not thrown 
-        address lender = msg.sender;
+        // address lender = msg.sender;
+        (address paymentMethod, address lender) = getPaymentInfo(nftAddress, tokenID);  // added this to have paymentMethod as well
 
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(nftAddress, msg.sender, tokenID);
 
-        // Rent price calculation (both serviceFee and rent balance)
-        uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
-        if ( totalRentPrice == 0 )  return WithdrawMsg.ZeroBalance;
-        (, uint256 rentPriceAfterFee) = calculateServiceFees(totalRentPrice);
-
-        // first, set rent balance flag to true (to avoid re-entrancy)
-        rentBalanceFlag[_RNFT_tokenId] = true;
+        // first, set rent balance flag to zero (to avoid re-entrancy)
+        uint256 old_rentBalance = rentBalance[_RNFT_tokenId];
+        rentBalance[_RNFT_tokenId] = 0;
         // and then, trasnfer to the lender
         bool success;
+        console.log("1234567");
         if (paymentMethod == ETHER_ADDRESS) {  // Ether
-            (success, ) = payable(lender).call{value: rentPriceAfterFee}("");
+            console.log("adsf");
+            (success, ) = payable(lender).call{value: old_rentBalance}("");
+            console.log("qwer");
         } else {    // ERC20
             ERC20 paymentToken = ERC20(paymentMethod);
-            success = paymentToken.transferFrom(address(this), lender, rentPriceAfterFee);
+            success = paymentToken.transferFrom(address(this), lender, old_rentBalance);
         }
-        if ( !success ) {
-            rentBalanceFlag[_RNFT_tokenId] = false;
+        if ( !success ) {   // failed. need to recover the original status
+            rentBalance[_RNFT_tokenId] = old_rentBalance;
             return WithdrawMsg.TransferFailed;
         }
+
+        console.log("hahaha");
+
+        rNFTCtrInstance.setWithdrawFlag(_RNFT_tokenId);
+
+        emit Rent_Fee_Withdrawn(lender, nftAddress, tokenID, paymentMethod, old_rentBalance);
 
         return WithdrawMsg.Success;
     }
@@ -740,9 +759,9 @@ contract Gateway is
     ///@dev to get NFT payment data (lender and paymentMethod)
     function getPaymentInfo(address nftAddress, uint256 tokenID) internal view returns (address, address){
         Lending memory _lendRecord = lendRegistry[nftAddress].lendingMap[tokenID];
-        address paymentMethod = _lendRecord.acceptedPaymentMethod;
-        require(paymentMethod != address(0), "No payment method");
-        return (paymentMethod, _lendRecord.lender);
+        require(_lendRecord.lender != address(0), "Lending not created yet");
+        require(_lendRecord.acceptedPaymentMethod != address(0), "Payment method not set");
+        return (_lendRecord.acceptedPaymentMethod, _lendRecord.lender);
     }
 
     ///@dev to withdraw fee for a specific  lending
@@ -750,18 +769,19 @@ contract Gateway is
         external nonReentrant
         returns (IGateway.WithdrawMsg)
     {
+        console.log(nftAddress, tokenID);
         WithdrawMsg res = _withdraw(nftAddress, tokenID);
         require(res != WithdrawMsg.PermissionDenied, "Unauthorized caller: invalid withdrawer");
         require(res != WithdrawMsg.NotMinted, "RNFT-ID not found");
         require(res != WithdrawMsg.NotRented, "NFT rental status: not rented");
         require(res != WithdrawMsg.AlreadyWithdrawn, "Rent balance was already withdrawn!");
-        require(res != WithdrawMsg.ZeroBalance, "Zero Balance");
+        // require(res != WithdrawMsg.ZeroBalance, "Zero Balance");
         require(res != WithdrawMsg.TransferFailed, "Rent balance withdrawal failed");
         return res;
     }
 
     ///@dev to withdraw rent fee for multiple lendings
-    ///@return: array of WithdrawMsg => (indicating the WithdrawMsg enum for each NFT asset) => values: error or success
+    ///@return array of WithdrawMsg => (indicating the WithdrawMsg enum for each NFT asset) => values: error or success
     function withdrawRentFunds(
         address[] calldata nftAddresses,
         uint256[] calldata tokenIDs
