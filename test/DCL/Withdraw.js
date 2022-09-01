@@ -134,25 +134,28 @@ describe("Claim fee for renting / protocol", async () => {
         gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID)
       ).to.be.revertedWith("Funds for this lending are not claimed yet");
 
-      console.log(`withdrawing...`);
+      // console.log(`withdrawing...`);
       await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
-      console.log(`redeeming...`);
+      // console.log(`redeeming...`);
       await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
-    // it("should withdraw appropriate amount", async () => {
-    //   await expect(gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID))
-    //     .to.emit(gateway, "Rent_Fee_Withdrawn")
-    //     .withArgs(
-    //       owner.address,
-    //       NFT_ADDRESS,
-    //       ORIGINAL_NFT_ID,
-    //       ETH_ADDRESS,
-    //       MAX_DURATION_IN_MONTHS * RENT_PRICE_PER_TIMEUNIT_ETH
-    //     );
-    //   console.log(`redeeming...`);
-    //   await expect(gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID))
-    //     .to.emit(gateway, "NFT_Lending_Removed")
-    //     .withArgs(owner.address, NFT_ADDRESS, ORIGINAL_NFT_ID);
-    // });
+    it("should withdraw appropriate amount", async () => {
+      const fee = await gateway.getFee();
+      await expect(gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID))
+        .to.emit(gateway, "Rent_Fee_Withdrawn")
+        .withArgs(
+          owner.address,
+          NFT_ADDRESS,
+          ORIGINAL_NFT_ID,
+          ETH_ADDRESS,
+          (MAX_DURATION_IN_MONTHS *
+            RENT_PRICE_PER_TIMEUNIT_ETH *
+            ethers.BigNumber.from(100 - fee)) /
+            ethers.BigNumber.from(100)
+        );
+      await expect(gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID))
+        .to.emit(gateway, "NFT_Lending_Removed")
+        .withArgs(owner.address, NFT_ADDRESS, ORIGINAL_NFT_ID);
+    });
   });
 });

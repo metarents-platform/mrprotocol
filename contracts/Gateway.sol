@@ -706,7 +706,7 @@ contract Gateway is
 
         if (_RNFT_tokenId == 0)                         return WithdrawMsg.NotMinted;
         if (rNFTCtrInstance.isWithdrawn(_RNFT_tokenId)) return WithdrawMsg.AlreadyWithdrawn;
-        if (rentBalance[_RNFT_tokenId] == 0)            return WithdrawMsg.ZeroBalance;
+        // if (rentBalance[_RNFT_tokenId] == 0)            return WithdrawMsg.ZeroBalance;
         // if (!rNFTCtrInstance.isRented(_RNFT_tokenId))   return WithdrawMsg.NotRented;
 
         return WithdrawMsg.Success;
@@ -716,8 +716,6 @@ contract Gateway is
     ///@return WithdrawMsg enum => (indicating the WithdrawMsg type for each NFT asset) => values: error or success
     function _withdraw(address nftAddress, uint256 tokenID) internal returns (IGateway.WithdrawMsg) {
 
-        console.log("_withdraw");
-        
         WithdrawMsg res = isAssetRentBalanceWithdrawable(nftAddress, tokenID);
         if (res != WithdrawMsg.Success)   return res;
 
@@ -733,11 +731,8 @@ contract Gateway is
         rentBalance[_RNFT_tokenId] = 0;
         // and then, trasnfer to the lender
         bool success;
-        console.log("1234567");
         if (paymentMethod == ETHER_ADDRESS) {  // Ether
-            console.log("adsf");
             (success, ) = payable(lender).call{value: old_rentBalance}("");
-            console.log("qwer");
         } else {    // ERC20
             ERC20 paymentToken = ERC20(paymentMethod);
             success = paymentToken.transferFrom(address(this), lender, old_rentBalance);
@@ -746,8 +741,6 @@ contract Gateway is
             rentBalance[_RNFT_tokenId] = old_rentBalance;
             return WithdrawMsg.TransferFailed;
         }
-
-        console.log("hahaha");
 
         rNFTCtrInstance.setWithdrawFlag(_RNFT_tokenId);
 
@@ -769,7 +762,6 @@ contract Gateway is
         external nonReentrant
         returns (IGateway.WithdrawMsg)
     {
-        console.log(nftAddress, tokenID);
         WithdrawMsg res = _withdraw(nftAddress, tokenID);
         require(res != WithdrawMsg.PermissionDenied, "Unauthorized caller: invalid withdrawer");
         require(res != WithdrawMsg.NotMinted, "RNFT-ID not found");

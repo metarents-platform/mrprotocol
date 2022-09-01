@@ -372,7 +372,7 @@ contract RNFT is
     }
 
     ///@dev to set withdraw flag for RNFT (lending)
-    function setWithdrawFlag(uint256 rTokenId) external onlyOwner {
+    function setWithdrawFlag(uint256 rTokenId) external onlyAdmin {
         _rmetadata[rTokenId].isRentBalanceWithdrawn = true;
     }    
 
