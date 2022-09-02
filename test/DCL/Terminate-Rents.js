@@ -153,8 +153,9 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
             )
         ).to.be.revertedWith("Restricted to admins");
 
-        await gateway /* .connect(other) */
-          .redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
+        // withdraw & redeem
+        await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
+        await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
       it("Should revert with messsage 'ERROR: Rent not expired, ongoing rent duration' when rent is not over!", async () => {
         // check
@@ -172,7 +173,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
           ONE_MONTH * MAX_DURATION,
         ]);
         await ethers.provider.send("evm_mine");
-        // redeem NFT
+        // withdraw & redeem
+        await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
         await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
       it("Success : Should emit the event 'Rent_Terminated' with params null!", async () => {
@@ -192,7 +194,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
         )
           .to.emit(rNFT, "Rent_Terminated")
           .withArgs(rTokenId, false, 0);
-        // redeem NFT
+        // withdraw & redeem
+        await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
         await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
     });
@@ -243,7 +246,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
         ONE_MONTH * MAX_DURATION,
       ]);
       await ethers.provider.send("evm_mine");
-      // redeem
+      // withdraw & redeem
+      await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
       await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
     it("Success : Should emit the event 'Rent_Agreemeng_Terminated'", async () => {
@@ -257,6 +261,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
         .to.emit(gateway, "Rent_Agreemeng_Terminated")
         .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
 
+      // withdraw & redeem
+      await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
       await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
   });

@@ -38,11 +38,9 @@ describe("Module to confirm rent booking requests & distribute payment", async (
 
     // deploy Gateway -> gateway
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
 
     // set treasury
@@ -551,8 +549,8 @@ describe("Module to confirm rent booking requests & distribute payment", async (
         )
           .to.emit(gateway, "Rent_Confirmed_Paid")
           .withArgs(NFT_ADDRESS, ORIGINAL_NFT_ID, rTokenId);
-        
-          // stimulate time
+
+        // stimulate time
         await ethers.provider.send("evm_increaseTime", [
           ONE_MONTH * MAX_DURATION,
         ]);

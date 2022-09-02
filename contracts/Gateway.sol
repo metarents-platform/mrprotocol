@@ -27,8 +27,6 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 import "./IRNFT.sol";
 import "./IGateway.sol";
 
-import "hardhat/console.sol";
-
 contract Gateway is
     Initializable,
     AccessControlUpgradeable,
@@ -139,6 +137,7 @@ contract Gateway is
         address paymentMethod,
         uint256 withdrawBalance
     );
+    event Protocol_Fee_Claimed(address _treasuryAddress, address paymentMethod, uint256 balance);
 
     // events newly added !>
 
@@ -735,7 +734,7 @@ contract Gateway is
             (success, ) = payable(lender).call{value: old_rentBalance}("");
         } else {    // ERC20
             ERC20 paymentToken = ERC20(paymentMethod);
-            success = paymentToken.transferFrom(address(this), lender, old_rentBalance);
+            success = paymentToken.transfer(lender, old_rentBalance);
         }
         if ( !success ) {   // failed. need to recover the original status
             rentBalance[_RNFT_tokenId] = old_rentBalance;
@@ -803,12 +802,14 @@ contract Gateway is
             (success, ) = payable(_treasuryAddress).call{value: balance}("");
         } else {    // ERC20
             ERC20 paymentToken = ERC20(paymentMethod);
-            success = paymentToken.transferFrom(address(this), _treasuryAddress, balance);
+            success = paymentToken.transfer(_treasuryAddress, balance);
         }
         if ( !success ) {
             protocolBalance[paymentMethod] = balance;
             revert("Something went wrong, claiming protocol fee transcation failed!!!");
         }
+
+        emit Protocol_Fee_Claimed(_treasuryAddress, paymentMethod, balance);
         return true;
     }
 

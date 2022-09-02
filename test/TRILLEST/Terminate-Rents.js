@@ -38,11 +38,9 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
 
     // deploy Gateway -> gateway
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
 
     // set treasury

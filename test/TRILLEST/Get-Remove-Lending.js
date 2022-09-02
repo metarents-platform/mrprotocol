@@ -64,7 +64,7 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
   const RENT_PRICE_PER_TIMEUNIT = 500;
-  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x00", 20); // zero address for ETH
+  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
 
   /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
 
@@ -78,11 +78,9 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
     await rNFT.deployed();
 
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
   });
 

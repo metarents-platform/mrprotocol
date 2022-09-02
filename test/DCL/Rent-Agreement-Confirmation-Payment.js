@@ -543,7 +543,8 @@ describe("Module to confirm rent booking requests & distribute payment", async (
           ONE_MONTH * MAX_DURATION,
         ]);
         await ethers.provider.send("evm_mine");
-        // redeem
+        // withdraw & redeem
+        await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
         await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
       it("ERC20 token payment", async () => {
@@ -609,7 +610,8 @@ describe("Module to confirm rent booking requests & distribute payment", async (
           ONE_MONTH * MAX_DURATION,
         ]);
         await ethers.provider.send("evm_mine");
-        // redeem
+        // withdraw & redeem
+        await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
         await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
       });
     });

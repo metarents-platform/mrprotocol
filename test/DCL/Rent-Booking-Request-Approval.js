@@ -162,97 +162,98 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
     });
   });
 
-  describe("Gateway/_approveRenterRequest : supply NFT metadata to map it to its owner", async () => {
-    it("Should revert with message 'not listed for lending yet' when the owner has not listed for lending yet", async () => {
-      await expect(
-        gateway._approveRenterRequest(
-          renter.address,
-          NFT_ADDRESS,
-          ORIGINAL_NFT_ID,
-          MAX_DURATION * ONE_MONTH,
-          1
-        )
-      ).to.be.revertedWith("not listed for lending yet");
-    });
-    it("Should revert with message 'Invalid rent duration: not seconds' when rentDuration is not times of rentTimeUnit", async () => {
-      // first of all, needs to list for lending
-      await gateway.createLendRecord(
-        NFT_ADDRESS,
-        ORIGINAL_NFT_ID,
-        MAX_DURATION * ONE_MONTH,
-        MIN_DURATION * ONE_MONTH,
-        ONE_MONTH,
-        RENT_PRICE_PER_TIMEUNIT,
-        ETH_ADDRESS
-      );
-      // check
-      await expect(
-        gateway._approveRenterRequest(
-          renter.address,
-          NFT_ADDRESS,
-          ORIGINAL_NFT_ID,
-          MAX_DURATION * ONE_MONTH + 1, // rentDuration is not times of rentTimeUnit
-          1
-        )
-      ).to.be.revertedWith("Invalid rent duration: not seconds");
-    });
-    it("Should revert with message 'Restricted to admins' before the Gateway contract is the admin of RNFT contract", async () => {
-      // first of all, needs to list for lending
-      await gateway.createLendRecord(
-        NFT_ADDRESS,
-        ORIGINAL_NFT_ID,
-        MAX_DURATION * ONE_MONTH,
-        MIN_DURATION * ONE_MONTH,
-        ONE_MONTH,
-        RENT_PRICE_PER_TIMEUNIT,
-        ETH_ADDRESS
-      );
-      // check
-      await expect(
-        gateway._approveRenterRequest(
-          renter.address,
-          NFT_ADDRESS,
-          ORIGINAL_NFT_ID,
-          MAX_DURATION * ONE_MONTH, // rentDuration < minDuration
-          1
-        )
-      ).to.be.revertedWith("Restricted to admins");
-    });
-    it("Should emit the event 'Renter_Request_Approved' once approved the request successfuly", async () => {
-      // first of all, needs to list for lending
-      await gateway.createLendRecord(
-        NFT_ADDRESS,
-        ORIGINAL_NFT_ID,
-        MAX_DURATION * ONE_MONTH,
-        MIN_DURATION * ONE_MONTH,
-        ONE_MONTH,
-        RENT_PRICE_PER_TIMEUNIT,
-        ETH_ADDRESS
-      );
-      // set Gateway as the admin of RNFT
-      await rNFT._setNewAdmin(gateway.address);
-      // check
-      await expect(
-        gateway._approveRenterRequest(
-          renter.address,
-          NFT_ADDRESS,
-          ORIGINAL_NFT_ID,
-          MAX_DURATION * ONE_MONTH,
-          1
-        )
-      )
-        .to.emit(gateway, "Renter_Request_Approved")
-        .withArgs(
-          owner.address,
-          NFT_ADDRESS,
-          ORIGINAL_NFT_ID,
-          1,
-          renter.address,
-          MAX_DURATION * ONE_MONTH,
-          RENT_PRICE_PER_TIMEUNIT
-        );
-    });
-  });
+  // this is now internal function
+  // describe("Gateway/_approveRenterRequest : supply NFT metadata to map it to its owner", async () => {
+  //   it("Should revert with message 'not listed for lending yet' when the owner has not listed for lending yet", async () => {
+  //     await expect(
+  //       gateway._approveRenterRequest(
+  //         renter.address,
+  //         NFT_ADDRESS,
+  //         ORIGINAL_NFT_ID,
+  //         MAX_DURATION * ONE_MONTH,
+  //         1
+  //       )
+  //     ).to.be.revertedWith("not listed for lending yet");
+  //   });
+  //   it("Should revert with message 'Invalid rent duration: not seconds' when rentDuration is not times of rentTimeUnit", async () => {
+  //     // first of all, needs to list for lending
+  //     await gateway.createLendRecord(
+  //       NFT_ADDRESS,
+  //       ORIGINAL_NFT_ID,
+  //       MAX_DURATION * ONE_MONTH,
+  //       MIN_DURATION * ONE_MONTH,
+  //       ONE_MONTH,
+  //       RENT_PRICE_PER_TIMEUNIT,
+  //       ETH_ADDRESS
+  //     );
+  //     // check
+  //     await expect(
+  //       gateway._approveRenterRequest(
+  //         renter.address,
+  //         NFT_ADDRESS,
+  //         ORIGINAL_NFT_ID,
+  //         MAX_DURATION * ONE_MONTH + 1, // rentDuration is not times of rentTimeUnit
+  //         1
+  //       )
+  //     ).to.be.revertedWith("Invalid rent duration: not seconds");
+  //   });
+  //   it("Should revert with message 'Restricted to admins' before the Gateway contract is the admin of RNFT contract", async () => {
+  //     // first of all, needs to list for lending
+  //     await gateway.createLendRecord(
+  //       NFT_ADDRESS,
+  //       ORIGINAL_NFT_ID,
+  //       MAX_DURATION * ONE_MONTH,
+  //       MIN_DURATION * ONE_MONTH,
+  //       ONE_MONTH,
+  //       RENT_PRICE_PER_TIMEUNIT,
+  //       ETH_ADDRESS
+  //     );
+  //     // check
+  //     await expect(
+  //       gateway._approveRenterRequest(
+  //         renter.address,
+  //         NFT_ADDRESS,
+  //         ORIGINAL_NFT_ID,
+  //         MAX_DURATION * ONE_MONTH, // rentDuration < minDuration
+  //         1
+  //       )
+  //     ).to.be.revertedWith("Restricted to admins");
+  //   });
+  //   it("Should emit the event 'Renter_Request_Approved' once approved the request successfuly", async () => {
+  //     // first of all, needs to list for lending
+  //     await gateway.createLendRecord(
+  //       NFT_ADDRESS,
+  //       ORIGINAL_NFT_ID,
+  //       MAX_DURATION * ONE_MONTH,
+  //       MIN_DURATION * ONE_MONTH,
+  //       ONE_MONTH,
+  //       RENT_PRICE_PER_TIMEUNIT,
+  //       ETH_ADDRESS
+  //     );
+  //     // set Gateway as the admin of RNFT
+  //     await rNFT._setNewAdmin(gateway.address);
+  //     // check
+  //     await expect(
+  //       gateway._approveRenterRequest(
+  //         renter.address,
+  //         NFT_ADDRESS,
+  //         ORIGINAL_NFT_ID,
+  //         MAX_DURATION * ONE_MONTH,
+  //         1
+  //       )
+  //     )
+  //       .to.emit(gateway, "Renter_Request_Approved")
+  //       .withArgs(
+  //         owner.address,
+  //         NFT_ADDRESS,
+  //         ORIGINAL_NFT_ID,
+  //         1,
+  //         renter.address,
+  //         MAX_DURATION * ONE_MONTH,
+  //         RENT_PRICE_PER_TIMEUNIT
+  //       );
+  //   });
+  // });
 
   describe("Gateway/approveAndPreMintRNFT : Approve the renter and generate a new RNFT", () => {
     it("Should be reverted with message 'Invalid renter address: zero address' when a zero address", async () => {

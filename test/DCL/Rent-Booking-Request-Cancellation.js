@@ -88,8 +88,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
   const RENT_PRICE_PER_TIMEUNIT = 500;
-  const ZERO_ADDRES = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
-  const ETH_ADDRESS = ZERO_ADDRES;
+  const ZERO_ADDRES = ethers.utils.hexZeroPad("0x00", 20);
+  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20);
 
   /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
 
