@@ -1,0 +1,14 @@
+node_modules
+
+.gitignore
+.env
+.openzeppelin
+artifacts
+cache
+
+contracts/DCL/EstateRegistry.sol
+contracts/DCL/ITokenController.sol
+contracts/DCL/LANDRegistry.sol
+contracts/DCL/MiniMeToken.sol
+
+contracts/ERC20
