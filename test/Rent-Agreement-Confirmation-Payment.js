@@ -38,6 +38,14 @@ describe("Module to confirm rent booking requests & distribute payment", async (
       initializer: "initialize",
     });
     await gateway.deployed();
+
+    const LandRegistry = await ethers.getContractAt(NFT_NAME, NFT_ADDRESS);
+    // Approve the RNFT contract to operate NFTs
+    await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+    // Approve Gateway for all (required to call `setUpdateManager`)
+    await LandRegistry.setApprovalForAll(gateway.address, true);
+    // add Gateway as admin
+    await rNFT._setNewAdmin(gateway.address);
   });
 
   describe("RNFT/getRentPrice : Return the total price for renting", async () => {
@@ -488,21 +496,6 @@ describe("Module to confirm rent booking requests & distribute payment", async (
     });
     describe("Success : Should emit the event 'Rent_Confirmed_Paid'", async () => {
       let rTokenId;
-      beforeEach(async () => {
-        // Get Original NFT contract
-        const LandRegistry = await ethers.getContractAt(
-          NFT_NAME,
-          NFT_ADDRESS,
-          owner
-        );
-        // Approve the RNFT contract to operate NFTs
-        await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-        // Set the RNFT contract as the manager
-        await LandRegistry.setUpdateManager(owner.address, rNFT.address, true);
-        // set Gateway as the admin of RNFT
-        await rNFT._setNewAdmin(gateway.address);
-      });
-
       it("ETH payment", async () => {
         // first of all, needs to list for lending
         await gateway.createLendRecord(
@@ -554,14 +547,6 @@ describe("Module to confirm rent booking requests & distribute payment", async (
           TRILL_ADDRESS,
           owner
         );
-        // Get Original NFT contract
-        const LandRegistry = await ethers.getContractAt(
-          NFT_NAME,
-          NFT_ADDRESS,
-          owner
-        );
-        // Approve the RNFT contract to operate NFTs
-        await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
         // Add TRILL as the supported payment method
         await gateway.setSupportedPaymentTokens(TRILL_ADDRESS);
         // LIFT nft for lending

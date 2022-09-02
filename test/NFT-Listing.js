@@ -55,8 +55,6 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
   let RNFT, rNFT;
   let owner, other;
 
-  /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
-
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
 
@@ -75,7 +73,8 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
 
   describe("Listing should be added to the registry!", () => {
     const NFT_ADDRESS = "0xC1436f5788eAeE05B9523A2051117992cF6e22d8"; // LANDRegistry
-    const ORIGINAL_NFT_ID = 64;
+    const NFT_NAME = "contracts/DCL/LANDRegistry.sol:LANDRegistry";
+    const ORIGINAL_NFT_ID = 64;  
     const MAX_DURATION = 3;
     const MIN_DURATION = 1;
     const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
@@ -230,6 +229,17 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
     });
 
     it("Should work fine with the event 'NFT_Listed' emitted", async () => {
+      // Get Original NFT contract
+      const landRegistry = await ethers.getContractAt(
+        NFT_NAME,
+        NFT_ADDRESS,
+        owner
+      );
+      // Approve the RNFT contract to operate NFTs
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       await expect(
         gateway.createLendRecord(
           NFT_ADDRESS,

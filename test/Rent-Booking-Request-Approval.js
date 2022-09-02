@@ -290,6 +290,17 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
     });
 
     it("Should be reverted with message 'Lender cannot be a renter' when the lender requests renting", async () => {
+      // Get Original NFT contract
+      const landRegistry = await ethers.getContractAt(
+        NFT_NAME,
+        NFT_ADDRESS,
+        owner
+      );
+      // Approve the RNFT contract to operate NFTs
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -320,6 +331,9 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
       );
       // Approve the RNFT contract to operate NFTs
       await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await LandRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,

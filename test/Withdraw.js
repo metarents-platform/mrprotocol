@@ -108,8 +108,8 @@ describe("Claim fee for renting / protocol", async () => {
 
     // Approve the RNFT contract to operate NFTs
     await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-    // Set the RNFT contract as the manager
-    await landRegistry.setUpdateManager(owner.address, rNFT.address, true);
+    // Approve Gateway for all (required to call `setUpdateManager`)
+    await landRegistry.setApprovalForAll(gateway.address, true);
     // set Gateway as the admin of RNFT
     await rNFT._setNewAdmin(gateway.address);
   });
@@ -215,9 +215,8 @@ describe("Claim fee for renting / protocol", async () => {
         owner.address, // LENDER
         amountAfterFee
       );
-      // withdraw
+      // withdraw & redeem
       await gateway.withdrawRentFund(NFT_ADDRESS, ORIGINAL_NFT_ID);
-
       await gateway.redeemNFT(NFT_ADDRESS, ORIGINAL_NFT_ID);
     });
     it("should withdraw appropriate amount", async () => {

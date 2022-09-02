@@ -4,21 +4,19 @@ const { ethers, upgrades } = require("hardhat");
 describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, hacker, treasury, addrs;
+  let owner, hacker, addrs;
 
   beforeEach(async () => {
-    [owner, hacker, treasury, ...addrs] = await ethers.getSigners();
+    [owner, hacker, ...addrs] = await ethers.getSigners();
 
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
 
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
   });
 
@@ -45,7 +43,7 @@ describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
     });
 
     it("ETH should be listed as the supported token", async () => {
-      const ETH_ADDRESS = ethers.utils.hexZeroPad("0x00", 20); // zero address for ETH
+      const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
       expect(await gateway.isSupportedPaymentToken(ETH_ADDRESS)).to.equal(true);
     });
 

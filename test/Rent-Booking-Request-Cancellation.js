@@ -79,35 +79,33 @@ RNFT::clearRNFTState()
 describe("Module to cancel/reject rent booking requests", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, other, treasury, renter, addrs;
+  let owner, other, renter;
 
-  const NFT_ADDRESS = "0xF8764D543ae563A0B42761DCd31bE102603b722E"; // Smol Runners
-  const NFT_NAME = "SmolRunners";
-  const ORIGINAL_NFT_ID = 1;
+  const NFT_ADDRESS = "0xC1436f5788eAeE05B9523A2051117992cF6e22d8"; // LANDRegistry
+  const NFT_NAME = "contracts/DCL/LANDRegistry.sol:LANDRegistry";
+  const ORIGINAL_NFT_ID = 64;
   const MAX_DURATION = 3;
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
   const RENT_PRICE_PER_TIMEUNIT = 500;
-  const ZERO_ADDRES = ethers.utils.hexZeroPad("0x00", 20); // zero address for ETH
-  const ETH_ADDRESS = ZERO_ADDRES;
+  const ZERO_ADDRES = ethers.utils.hexZeroPad("0x00", 20);
+  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20);
 
   /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
 
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
 
-    [owner, other, treasury, renter, ...addrs] = await ethers.getSigners();
+    [owner, other, renter] = await ethers.getSigners();
 
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
 
     Gateway = await ethers.getContractFactory("Gateway");
-    gateway = await upgrades.deployProxy(
-      Gateway,
-      [rNFT.address, treasury.address],
-      { initializer: "initialize" }
-    );
+    gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
+      initializer: "initialize",
+    });
     await gateway.deployed();
   });
 
@@ -119,13 +117,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should return 1 after first approval on a rent booking request", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -157,13 +158,15 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should return FALSE after for the un-approved renter", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -187,13 +190,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should return TRUE after approval on a rent booking request for the approved renter", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -232,13 +238,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should return correct data after Rent approval", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -275,13 +284,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should return 0 (all fields) after resetting", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -323,6 +335,17 @@ describe("Module to cancel/reject rent booking requests", async () => {
       );
     });
     it("Should revert with message 'RNFT Token ID doesn't exist' before the owner approved", async () => {
+      // Get Original NFT contract
+      const landRegistry = await ethers.getContractAt(
+        NFT_NAME,
+        NFT_ADDRESS,
+        owner
+      );
+      // Approve the RNFT contract to operate NFTs
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+      
       // list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -339,13 +362,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should revert with message 'renter address is not approved", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -371,13 +397,16 @@ describe("Module to cancel/reject rent booking requests", async () => {
     });
     it("Should emit the event 'Approval_Canceled' once executed successfully", async () => {
       // Get Original NFT contract
-      const SmolRunnersNFT = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
       // Approve the RNFT contract to operate NFTs
-      await SmolRunnersNFT.approve(rNFT.address, ORIGINAL_NFT_ID);
+      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve Gateway for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(gateway.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,

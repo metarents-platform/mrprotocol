@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
@@ -56,10 +57,11 @@ const compareTwoObjects = (obj1, obj2) => {
 describe("READ/DELETE lending metadata from Market Gateway contract", async () => {
   let Gateway, gateway;
   let RNFT, rNFT;
-  let owner, other, treasury;
+  let owner, other;
 
-  const NFT_ADDRESS = "0xF8764D543ae563A0B42761DCd31bE102603b722E"; // Smol Runners
-  const ORIGINAL_NFT_ID = 1;
+  const NFT_ADDRESS = "0xC1436f5788eAeE05B9523A2051117992cF6e22d8"; // LANDRegistry
+  const NFT_NAME = "contracts/DCL/LANDRegistry.sol:LANDRegistry";
+  const ORIGINAL_NFT_ID = 64;
   const MAX_DURATION = 3;
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
@@ -71,7 +73,7 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
 
-    [owner, other, treasury, ...addrs] = await ethers.getSigners();
+    [owner, other] = await ethers.getSigners();
 
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
@@ -82,6 +84,17 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
       initializer: "initialize",
     });
     await gateway.deployed();
+
+    // Get Original NFT contract
+    const landRegistry = await ethers.getContractAt(
+      NFT_NAME,
+      NFT_ADDRESS,
+      owner
+    );
+    // Approve the RNFT contract to operate NFTs
+    await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+    // Approve Gateway for all (required to call `setUpdateManager`)
+    await landRegistry.setApprovalForAll(gateway.address, true);
   });
 
   describe("READ lending metadata from Market Gateway contract", () => {
@@ -130,7 +143,6 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
         rentPricePerTimeUnit: RENT_PRICE_PER_TIMEUNIT,
         acceptedPaymentMethod: ETH_ADDRESS,
       };
-      // eslint-disable-next-line no-unused-expressions
       expect(compareTwoObjects(returnValue, expectedValue)).to.be.true;
     });
 

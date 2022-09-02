@@ -19,6 +19,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "./IRNFT.sol";
 import "./DCL/IDCL.sol";
+// import "./DCL/ILandRegistry.sol";
 
 contract RNFT is
     Initializable,
@@ -215,6 +216,9 @@ contract RNFT is
         // Map the owner's original NFT to the RNFT
         _OwnerRTokenID[nftAddress][originalOwner][oTokenId] = RTokenId;
         _rmetadata[RTokenId].originalOwner = originalOwner;
+
+        // set RNFT as the mamanager
+        // ILandRegistry(nftAddress).setUpdateManager(_tokenOwner, address(this), true);
 
         emit Metadata_Generated(
             _rmetadata[RTokenId].originalOwner,
