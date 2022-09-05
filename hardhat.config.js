@@ -61,9 +61,9 @@ module.exports = {
     local: {
       url: "http://127.0.0.1:8545",
       allowUnlimitedContractSize: true,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-      },
+      // accounts: {
+      //   mnemonic: process.env.MNEMONIC,
+      // },
     },
 
     ethereum: {

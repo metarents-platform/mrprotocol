@@ -12,12 +12,21 @@ describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
+
+    console.log(`RNFT (proxy) address : ${rNFT.address}`);
+    console.log(`RNFT (implementation) address : ${await upgrades.erc1967.getImplementationAddress(rNFT.address)}`);
+    console.log(`RNFT (admin) address : ${await upgrades.erc1967.getAdminAddress(rNFT.address)}`);
     
     Gateway = await ethers.getContractFactory("Gateway");
     gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
       initializer: "initialize",
     });
+    console.log('3');
     await gateway.deployed();
+
+    console.log(`Gateway (proxy) address : ${gateway.address}`);
+    console.log(`Gateway (implementation) address : ${await upgrades.erc1967.getImplementationAddress(gateway.address)}`);
+    console.log(`Gateway (admin) address : ${await upgrades.erc1967.getAdminAddress(gateway.address)}`);
   });
 
   describe("Deployment of Gateway", function () {
