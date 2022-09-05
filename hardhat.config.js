@@ -51,11 +51,12 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        id: 1,
-        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
+        id: 420,
+        url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}` || "",
       },
-      // accounts: [deployerWalletPrivateKey],
-      chainId: 1,
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+      },
     },
     local: {
       url: "http://127.0.0.1:8545",

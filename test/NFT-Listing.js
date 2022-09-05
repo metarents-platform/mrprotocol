@@ -72,7 +72,7 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
   });
 
   describe("Listing should be added to the registry!", () => {
-    const NFT_ADDRESS = "0xC1436f5788eAeE05B9523A2051117992cF6e22d8"; // LANDRegistry
+    const NFT_ADDRESS = "0xD369c3DfD5EbF11e154F096649e131A8BfAb2f7e"; // LANDRegistry
     const NFT_NAME = "contracts/DCL/LANDRegistry.sol:LANDRegistry";
     const ORIGINAL_NFT_ID = 64;  
     const MAX_DURATION = 3;
