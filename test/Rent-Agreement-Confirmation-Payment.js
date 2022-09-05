@@ -21,7 +21,7 @@ describe("Module to confirm rent booking requests & distribute payment", async (
   const RENT_PRICE_PER_TIMEUNIT_ETH = ethers.utils.parseEther("0.001");
   const RENT_PRICE_PER_TIMEUNIT_TRILL = ethers.utils.parseUnits("100", 9);
   const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20);
-  const TRILL_ADDRESS = "0x311fDA80a91f7773afaC2D0b776eC2676d02185E";
+  const TRILL_ADDRESS = "0x6257E8dD2E049ccfFDC20043E22dB7aF9a815FdB";
   const TRILL_NAME = "TrillestERC20Token";
 
   beforeEach(async () => {
