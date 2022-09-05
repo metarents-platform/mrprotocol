@@ -122,10 +122,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
@@ -163,10 +161,9 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
+
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
         NFT_ADDRESS,
@@ -195,10 +192,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
@@ -243,10 +238,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
@@ -289,10 +282,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
@@ -341,10 +332,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
       
       // list NFT for lending
       await gateway.createLendRecord(
@@ -367,10 +356,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(
@@ -402,10 +389,8 @@ describe("Module to cancel/reject rent booking requests", async () => {
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(

@@ -39,11 +39,9 @@ describe("Module to confirm rent booking requests & distribute payment", async (
     });
     await gateway.deployed();
 
-    const LandRegistry = await ethers.getContractAt(NFT_NAME, NFT_ADDRESS);
-    // Approve the RNFT contract to operate NFTs
-    await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-    // Approve Gateway for all (required to call `setUpdateManager`)
-    await LandRegistry.setApprovalForAll(gateway.address, true);
+    const landRegistry = await ethers.getContractAt(NFT_NAME, NFT_ADDRESS);
+    // Approve RNFT for all (required to call `setUpdateManager`)
+    await landRegistry.setApprovalForAll(rNFT.address, true);
     // add Gateway as admin
     await rNFT._setNewAdmin(gateway.address);
   });

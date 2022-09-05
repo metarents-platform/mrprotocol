@@ -26,7 +26,6 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 
 import "./IRNFT.sol";
 import "./IGateway.sol";
-import "./DCL/ILandRegistry.sol";
 
 contract Gateway is
     Initializable,
@@ -261,9 +260,6 @@ contract Gateway is
         _lendRecord.rentPricePerTimeUnit = _rentPricePerTimeUnit; // supplied per second (day/week/month)
         _lendRecord.acceptedPaymentMethod = _paymentMethod;
 
-        // set RNFT as the mamanager
-        ILandRegistry(nftAddress).setUpdateManager(owner, _RNFTContractAddress, true);
-        
         emit NFT_Lending_Added(
             _lendRecord.lender,
             _lendRecord.nftAddress,

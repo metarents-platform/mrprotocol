@@ -19,7 +19,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import "./IRNFT.sol";
 import "./DCL/IDCL.sol";
-// import "./DCL/ILandRegistry.sol";
 
 contract RNFT is
     Initializable,
@@ -154,7 +153,8 @@ contract RNFT is
         // Create new instance
         IERC721 origContract = IERC721(nftAddress);
         require(
-            origContract.getApproved(oTokenId) == address(this),
+            // origContract.getApproved(oTokenId) == address(this),
+            origContract.isApprovedForAll(originalOwner, address(this)),
             "RNFT contract is not an approved operator"
         );
         // Check if contract is not owner to prevent unexpected errors at transferFrom
@@ -204,7 +204,8 @@ contract RNFT is
 
             // Check that the contract is approved: address(this) is RNFT contract
             require(
-                origContract.getApproved(oTokenId) == address(this),
+                // origContract.getApproved(oTokenId) == address(this),
+                origContract.isApprovedForAll(_tokenOwner, address(this)) == true,
                 "Contract not approved to operate NFT"
             );
         }
@@ -216,9 +217,6 @@ contract RNFT is
         // Map the owner's original NFT to the RNFT
         _OwnerRTokenID[nftAddress][originalOwner][oTokenId] = RTokenId;
         _rmetadata[RTokenId].originalOwner = originalOwner;
-
-        // set RNFT as the mamanager
-        // ILandRegistry(nftAddress).setUpdateManager(_tokenOwner, address(this), true);
 
         emit Metadata_Generated(
             _rmetadata[RTokenId].originalOwner,

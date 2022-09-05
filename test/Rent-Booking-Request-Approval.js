@@ -83,9 +83,7 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS
   const RENT_PRICE_PER_TIMEUNIT = 500;
-  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
-
-  /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
+  const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20);
 
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
@@ -146,13 +144,13 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
     });
     it("Should generate metadata emitting the event 'Metadata_Generated'", async () => {
       // Get Original NFT contract
-      const LandRegistry = await ethers.getContractAt(
+      const landRegistry = await ethers.getContractAt(
         NFT_NAME,
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       await expect(
         rNFT.initializeRentMetadata(owner.address, NFT_ADDRESS, ORIGINAL_NFT_ID)
@@ -296,10 +294,8 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       // list NFT for lending
       await gateway.createLendRecord(
@@ -329,10 +325,8 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await LandRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await LandRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await LandRegistry.setApprovalForAll(rNFT.address, true);
 
       // First of all, must list NFT for lending
       await gateway.createLendRecord(

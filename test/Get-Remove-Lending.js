@@ -68,8 +68,6 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
   const RENT_PRICE_PER_TIMEUNIT = 500;
   const ETH_ADDRESS = ethers.utils.hexZeroPad("0x01", 20); // zero address for ETH
 
-  /** Test with Smol Runners => https://testnets.opensea.io/collection/smolrunners */
-
   beforeEach(async () => {
     // deploy both Gateway & RNFT SCs
 
@@ -91,10 +89,8 @@ describe("READ/DELETE lending metadata from Market Gateway contract", async () =
       NFT_ADDRESS,
       owner
     );
-    // Approve the RNFT contract to operate NFTs
-    await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-    // Approve Gateway for all (required to call `setUpdateManager`)
-    await landRegistry.setApprovalForAll(gateway.address, true);
+    // Approve RNFT for all (required to call `setUpdateManager`)
+    await landRegistry.setApprovalForAll(rNFT.address, true);
   });
 
   describe("READ lending metadata from Market Gateway contract", () => {

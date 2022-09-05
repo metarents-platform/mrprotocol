@@ -47,10 +47,8 @@ describe("Terminate rent agreement and reset lending metadata", async () => {
       owner
     );
 
-    // Approve the RNFT contract to operate NFTs
-    await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-    // Approve Gateway for all (required to call `setUpdateManager`)
-    await landRegistry.setApprovalForAll(gateway.address, true);
+    // Approve RNFT for all (required to call `setUpdateManager`)
+    await landRegistry.setApprovalForAll(rNFT.address, true);
     // set Gateway as the admin of RNFT
     await rNFT._setNewAdmin(gateway.address);
   });

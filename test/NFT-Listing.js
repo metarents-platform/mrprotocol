@@ -235,10 +235,8 @@ describe("Add a new lending to list the NFT in the marketplace and store lending
         NFT_ADDRESS,
         owner
       );
-      // Approve the RNFT contract to operate NFTs
-      await landRegistry.approve(rNFT.address, ORIGINAL_NFT_ID);
-      // Approve Gateway for all (required to call `setUpdateManager`)
-      await landRegistry.setApprovalForAll(gateway.address, true);
+      // Approve RNFT for all (required to call `setUpdateManager`)
+      await landRegistry.setApprovalForAll(rNFT.address, true);
 
       await expect(
         gateway.createLendRecord(
