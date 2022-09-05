@@ -157,7 +157,7 @@ contract Gateway is
         _RNFTContractAddress = rNFTContractAddress_;
 
         // Set ETH & USDC as initial supported tokens after deployment
-        ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926); // rinkeby
+        ERC20_USDCAddress = address(0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557); // goerli
         setSupportedPaymentTokens(ETHER_ADDRESS);
         setSupportedPaymentTokens(ERC20_USDCAddress);
         setMarketGatewayTreasury(
