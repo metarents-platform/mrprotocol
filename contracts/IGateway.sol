@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 interface IGateway {
 
+    /// @dev Lending metadata
     struct Lending {
         address payable lender;
         uint256 nftId;
@@ -10,10 +11,11 @@ interface IGateway {
         uint256 maxDuration;
         uint256 minDuration;
         uint256 timeUnit;
-        uint256 rentPricePerTimeUnit;
+        uint256 rentPricePerTimeUnit; // price per second
         address acceptedPaymentMethod;
     }
 
+    // /// @dev lendRecord struct to store lendingMap
     struct lendRecord{
         mapping (uint256=>Lending) lendingMap;
 
@@ -28,6 +30,12 @@ interface IGateway {
         TransferFailed,
         PermissionDenied
     }
+
+    // struct assetRoyalty {
+    //     uint256 fee;
+    //     uint256 balance;
+    //     address beneficiary;
+    // }
 
     event NewAdminAdded(address newAdmin);
     event AdminRemoved(address current_admin);
@@ -53,13 +61,18 @@ interface IGateway {
         address renter_address
     ) external returns(uint256 _rNftId);
 
+    // function _approveRenterRequest(address _renterAddress, address nftAddress, uint256 oNftId, uint256 rentDuration, uint256 _rNftId) internal returns (uint256);
     function confirmRentAgreementAndPay(address nftAddress, uint256 originalTokenId) external payable returns (uint256 _RNFT_tokenId);
+    
+    // function distributePaymentTransactions(address nftAddress,uint256 nftId,uint256 _RNFT_tokenId, address _renterAddress) internal payable returns (uint256 totalRentPrice,uint256 _serviceFee);
+    
     function cancelApproval(address nftAddress, uint256 nftId, address renterAddress) external returns(bool);
     function getLending(address nftAddress,uint256 nftId) external view returns (Lending memory lendingData);
     function removeLending(address nftAddress, uint256 nftId) external;
     function terminateRentAgreement(address nftAddress, uint256 oNftId)external;
     function redeemNFT(address nftAddress, uint256 oNftId) external;
 
+     /** MetaRents Platform settings & configuration **/
     function setFee(uint256 fee_) external;
     function getFee() external view returns(uint256);
     function setMarketGatewayTreasury(address payable treasuryAddress) external;
@@ -68,9 +81,11 @@ interface IGateway {
     function isSupportedPaymentToken(address tokenAddress) external view returns(bool);
     function setSupportedPaymentTokens(address tokenAddress) external returns(address, string memory);
 
+    /** Gateway Contract Role-based Access Control */
     function setNewAdmin(address _newAdmin) external;
     function removeAdmin(address _admin) external;
 
+    /** Fee-related methods */
     function withdrawRentFund(address nftAddress, uint256 tokenID) external returns (WithdrawMsg);
     function withdrawRentFunds(address[] calldata nftAddresses, uint256[] calldata tokenIDs) external returns(WithdrawMsg[] memory);
 
