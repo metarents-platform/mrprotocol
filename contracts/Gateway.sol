@@ -124,7 +124,7 @@ contract Gateway is
         _setupRole(DEFAULT_ADMIN_ROLE, address(this));
         _RNFTContractAddress = rNFTContractAddress_;
 
-        ERC20_USDCAddress = address(0xeb8f08a975Ab53E34D8a0330E0D34de942C95926);
+        ERC20_USDCAddress = address(0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557);
         setSupportedPaymentTokens(ETHER_ADDRESS);
         setSupportedPaymentTokens(ERC20_USDCAddress);
         setMarketGatewayTreasury(
