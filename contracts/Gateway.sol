@@ -355,7 +355,7 @@ contract Gateway is
     }
 
     function distributePaymentTransactions(address nftAddress, uint256 nftId, uint256 _RNFT_tokenId, address _renterAddress) 
-    inte#rnal nonReentrant {
+    internal nonReentrant {
         Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[nftId];
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 totalRentPrice = rNFTCtrInstance.getRentPrice(_RNFT_tokenId);
