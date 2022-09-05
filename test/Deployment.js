@@ -40,7 +40,7 @@ describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
     });
 
     it("USDC should be listed as the supported token", async () => {
-      const USDC_ADDRESS = "0xeb8f08a975Ab53E34D8a0330E0D34de942C95926"; // rinkeby
+      const USDC_ADDRESS = "0x2f3A40A3db8a7e3D09B0adfEfbCe4f6F81927557"; // goerli
       expect(await gateway.isSupportedPaymentToken(USDC_ADDRESS)).to.equal(
         true
       );
