@@ -78,7 +78,7 @@ describe("Module to approve a renter by supplying 'renter_address' and 'rent_dur
 
   const NFT_ADDRESS = "0xD369c3DfD5EbF11e154F096649e131A8BfAb2f7e"; // LANDRegistry
   const NFT_NAME = "contracts/DCL/LANDRegistry.sol:LANDRegistry";
-  const ORIGINAL_NFT_ID = 64;
+  const ORIGINAL_NFT_ID = 14;
   const MAX_DURATION = 3;
   const MIN_DURATION = 1;
   const ONE_MONTH = 2628000; // MONTH_IN_SECONDS

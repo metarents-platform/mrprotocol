@@ -9,19 +9,15 @@ describe("Test on deployment of Gateway & RNFT on the blockchain", async () => {
   beforeEach(async () => {
     [owner, hacker, ...addrs] = await ethers.getSigners();
 
-    console.log(`Deploying RNFT...`);
     RNFT = await ethers.getContractFactory("RNFT");
     rNFT = await upgrades.deployProxy(RNFT);
     await rNFT.deployed();
-    console.log(`RNFT deployed successfully : ${rNFT.address}`);
-
-    console.log(`Deploying Gateway...`);
+    
     Gateway = await ethers.getContractFactory("Gateway");
     gateway = await upgrades.deployProxy(Gateway, [rNFT.address], {
       initializer: "initialize",
     });
     await gateway.deployed();
-    console.log(`Gateway deployed successfully!`);
   });
 
   describe("Deployment of Gateway", function () {
