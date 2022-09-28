@@ -88,6 +88,17 @@ const one_go = async (
     initialOwnerBalance = prevOwnerBalance = await ethers.provider.getBalance(owner.address);
     initialRenterBalance = prevRenterBalance = await ethers.provider.getBalance(renter.address);
 
+    // get TRILL token contract
+    trillToken = await ethers.getContractAt(TRILL_NAME, TRILL_ADDRESS, owner);
+    // approve Gateway to take token from the renter
+    await trillToken.connect(RENTER).approve(
+        gateway.address, // GATEWAY
+        RENT_PRICE_PER_TIMEUNIT_TRILL * MAX_DURATION_IN_DAYS
+    );
+  
+    afterRenterBalance = await ethers.provider.getBalance(RENTER.address);
+    console.log(`Token approval : ${ethers.utils.formatUnits(prevRenterBalance - afterRenterBalance, 18)} eth`);
+
     // first of all, needs to list for lending
     await gateway
         .connect(LENDER)
@@ -110,7 +121,7 @@ const one_go = async (
         .approveAndPreMintRNFT(
         NFT_ADDRESS,
         ORIGINAL_NFT_ID,
-        MAX_DURATION * TIME_UINT_IN_SECONDS,
+        MIN_DURATION * TIME_UINT_IN_SECONDS,
         RENTER.address
     );
     afterOwnerBalance = await ethers.provider.getBalance(owner.address);
@@ -120,7 +131,7 @@ const one_go = async (
     await gateway
         .connect(RENTER)
         .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID, {
-        value: RENT_PRICE_PER_TIMEUNIT * MAX_DURATION,
+        value: RENT_PRICE_PER_TIMEUNIT * MIN_DURATION,
     });
     afterRenterBalance = await ethers.provider.getBalance(RENTER.address);
     console.log(`Confirm & pay : ${ethers.utils.formatUnits(prevRenterBalance - afterRenterBalance, 18)} eth`);
@@ -163,8 +174,6 @@ const supportTRILLERC20 = async () => {
 
     initialBalance = prevBalance = await ethers.provider.getBalance(owner.address);
 
-    // Get Trill Token contract
-    trillToken = await ethers.getContractAt(TRILL_NAME, TRILL_ADDRESS, owner);
     // Add TRILL as the supported payment method
     await gateway.setSupportedPaymentTokens(TRILL_ADDRESS);
 
@@ -179,11 +188,8 @@ const supportTRILLERC20 = async () => {
 }
 
 const check = async () => {
-    let trillToken;
     let prevOwnerBalance, afterOwnerBalance, initialOwnerBalance;
     let prevRenterBalance, afterRenterBalance, initialRenterBalance;33// Get Trill Token contract
-    
-    trillToken = await ethers.getContractAt(TRILL_NAME, TRILL_ADDRESS, owner);
 
     await supportTRILLERC20();
 
@@ -192,15 +198,6 @@ const check = async () => {
 
     initialOwnerBalance = prevOwnerBalance = await ethers.provider.getBalance(owner.address);
     initialRenterBalance = prevRenterBalance = await ethers.provider.getBalance(renter.address);
-
-    // approve Gateway to take token from the renter
-    await trillToken.connect(renter).approve(
-      gateway.address, // GATEWAY
-      RENT_PRICE_PER_TIMEUNIT_TRILL * MAX_DURATION_IN_DAYS
-    );
-
-    afterRenterBalance = await ethers.provider.getBalance(renter.address);
-    console.log(`Token approval : ${ethers.utils.formatUnits(prevRenterBalance - afterRenterBalance, 18)} eth`);
 
     await one_go(
         owner, 
@@ -216,11 +213,11 @@ const check = async () => {
     afterOwnerBalance = await ethers.provider.getBalance(owner.address);
     afterRenterBalance = await ethers.provider.getBalance(renter.address);
 
-    console.log(`\n`);;
-    console.log(`********************************`);
-    console.log(`Amounts totally spent :`);
-    console.log(`lender : ${ethers.utils.formatUnits(initialOwnerBalance - afterOwnerBalance, 18)} eth`);
-    console.log(`renter : ${ethers.utils.formatUnits(initialRenterBalance - afterRenterBalance, 18)} eth`);
+    // console.log(`\n`);;
+    // console.log(`********************************`);
+    // console.log(`Amounts totally spent :`);
+    // console.log(`lender : ${ethers.utils.formatUnits(initialOwnerBalance - afterOwnerBalance, 18)} eth`);
+    // console.log(`renter : ${ethers.utils.formatUnits(initialRenterBalance - afterRenterBalance, 18)} eth`);
 }
 
 const main = init()
