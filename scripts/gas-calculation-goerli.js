@@ -144,9 +144,7 @@ const one_go = async (
     // confirm payment
     await gateway
         .connect(RENTER)
-        .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID, {
-        value: RENT_PRICE_PER_TIMEUNIT * MIN_DURATION,
-    });
+        .confirmRentAgreementAndPay(NFT_ADDRESS, ORIGINAL_NFT_ID);
     afterRenterBalance = await ethers.provider.getBalance(RENTER.address);
     console.log(`Confirm & pay : ${ethers.utils.formatUnits(prevRenterBalance - afterRenterBalance, 18)} eth`);
 

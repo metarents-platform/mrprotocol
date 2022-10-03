@@ -11,4 +11,4 @@ contracts/DCL/ITokenController.sol
 contracts/DCL/LANDRegistry.sol
 contracts/DCL/MiniMeToken.sol
 
-contracts/ERC20
+contracts/ERC20/TRILL.sol
