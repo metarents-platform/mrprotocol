@@ -130,6 +130,10 @@ contract Gateway is
         uint256 orignal_tokenId,
         uint256 RNFT_tokenId
     );
+    event NFT_Redeemed(
+        address nftAddress, 
+        uint256 oNftId
+    );
     event Rent_Fee_Withdrawn(
         address lender, 
         address nftAddress, 
@@ -601,7 +605,7 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        IRNFT(_RNFTContractAddress)._terminateRent(
+        rNFTCtrInstance._terminateRent(
             nftAddress,
             _RNFT_tokenId,
             oNftId,
@@ -617,6 +621,10 @@ contract Gateway is
             isERC721Compatible(nftAddress),
             "Contract is not ERC721-compatible"
         );
+        require(
+            msg.sender == lendRegistry[nftAddress].lendingMap[oNftId].lender,
+            "unauthorized: address is not owner or lending not registered"
+        );
         //(nftAddress != address(0) && oNftId != 0) &&
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(
@@ -626,16 +634,12 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        require(
-            msg.sender == lendRegistry[nftAddress].lendingMap[oNftId].lender,
-            "unauthorized: address is not owner or lending not registered"
-        );
         // enforce withdraw
         _withdraw(nftAddress, oNftId);
         // check if rent balance is already withdrawn
         require(rentBalance[_RNFT_tokenId] == 0, "Funds for this lending are not claimed yet");
         // call redeemNFT() to transfer NFT back to its owner
-        IRNFT(_RNFTContractAddress)._redeemNFT(
+        rNFTCtrInstance._redeemNFT(
             _RNFT_tokenId,
             nftAddress,
             oNftId,
@@ -643,6 +647,8 @@ contract Gateway is
         );
         // call removeLending() to delete lending record
         removeLending(nftAddress, oNftId);
+
+        emit NFT_Redeemed(nftAddress, oNftId);
     }
 
     /** MetaRents Platform settings & configuration **/
@@ -887,19 +893,7 @@ contract Gateway is
     }
 
     ///@dev to get rent balance for an NFT
-    function getRentBalance(address nftAddress, uint256 nftId) external view returns (uint256) {
-        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[
-            nftId
-        ];
-        address _lender = _lendRecord.lender;
-        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
-        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(
-            nftAddress,
-            _lender,
-            nftId
-        );
-        if (_RNFT_tokenId == 0) // never been rented
-            return 0;
+    function getRentBalance(uint256 _RNFT_tokenId) external view returns (uint256) {
         return rentBalance[_RNFT_tokenId];
     }
 }
