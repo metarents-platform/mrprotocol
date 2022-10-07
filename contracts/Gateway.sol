@@ -617,10 +617,6 @@ contract Gateway is
             isERC721Compatible(nftAddress),
             "Contract is not ERC721-compatible"
         );
-        require(
-            msg.sender == lendRegistry[nftAddress].lendingMap[oNftId].lender,
-            "unauthorized: address is not owner or lending not registered"
-        );
         //(nftAddress != address(0) && oNftId != 0) &&
         IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
         uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(
@@ -630,6 +626,10 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
+        require(
+            msg.sender == lendRegistry[nftAddress].lendingMap[oNftId].lender,
+            "unauthorized: address is not owner or lending not registered"
+        );
         // check if rent balance is already withdrawn
         require(rentBalance[_RNFT_tokenId] == 0, "Funds for this lending are not claimed yet");
         // call redeemNFT() to transfer NFT back to its owner
@@ -883,6 +883,4 @@ contract Gateway is
         bytes4 IID_IERC721 = type(IERC721).interfaceId;
         return IERC165(_contract).supportsInterface(IID_IERC721);
     }
-
-    
 }
