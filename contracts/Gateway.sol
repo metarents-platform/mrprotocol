@@ -883,4 +883,21 @@ contract Gateway is
         bytes4 IID_IERC721 = type(IERC721).interfaceId;
         return IERC165(_contract).supportsInterface(IID_IERC721);
     }
+
+    ///@dev to get rent balance for an NFT
+    function getRentBalance(address nftAddress, uint256 nftId) external view returns (uint256) {
+        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[
+            nftId
+        ];
+        address _lender = _lendRecord.lender;
+        IRNFT rNFTCtrInstance = IRNFT(_RNFTContractAddress);
+        uint256 _RNFT_tokenId = rNFTCtrInstance.getRnftFromNft(
+            nftAddress,
+            _lender,
+            nftId
+        );
+        if (_RNFT_tokenId == 0) // never been rented
+            return 0;
+        return rentBalance[_RNFT_tokenId];
+    }
 }
