@@ -630,6 +630,8 @@ contract Gateway is
             msg.sender == lendRegistry[nftAddress].lendingMap[oNftId].lender,
             "unauthorized: address is not owner or lending not registered"
         );
+        // enforce withdraw
+        _withdraw(nftAddress, oNftId);
         // check if rent balance is already withdrawn
         require(rentBalance[_RNFT_tokenId] == 0, "Funds for this lending are not claimed yet");
         // call redeemNFT() to transfer NFT back to its owner
