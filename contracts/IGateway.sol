@@ -91,4 +91,7 @@ interface IGateway {
 
     function claimProtocolFee(address paymentMethod) external returns (bool);
     function claimProtocolFees(address[] calldata paymentMethods) external returns (bool[] memory);
+
+    /** Getter methods for users */
+    function getRentBalance(uint256 _RNFT_tokenId) external view returns (uint256);
 }

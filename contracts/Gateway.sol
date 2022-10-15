@@ -130,6 +130,10 @@ contract Gateway is
         uint256 orignal_tokenId,
         uint256 RNFT_tokenId
     );
+    event NFT_Redeemed(
+        address nftAddress, 
+        uint256 oNftId
+    );
     event Rent_Fee_Withdrawn(
         address lender, 
         address nftAddress, 
@@ -601,7 +605,7 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
-        IRNFT(_RNFTContractAddress)._terminateRent(
+        rNFTCtrInstance._terminateRent(
             nftAddress,
             _RNFT_tokenId,
             oNftId,
@@ -630,10 +634,12 @@ contract Gateway is
         );
         // if(_RNFT_tokenId != 0,""); Check if rtoken is 0
         require(_RNFT_tokenId != 0, "RNFT Token ID doesn't exist");
+        // enforce withdraw
+        _withdraw(nftAddress, oNftId);
         // check if rent balance is already withdrawn
         require(rentBalance[_RNFT_tokenId] == 0, "Funds for this lending are not claimed yet");
         // call redeemNFT() to transfer NFT back to its owner
-        IRNFT(_RNFTContractAddress)._redeemNFT(
+        rNFTCtrInstance._redeemNFT(
             _RNFT_tokenId,
             nftAddress,
             oNftId,
@@ -641,6 +647,8 @@ contract Gateway is
         );
         // call removeLending() to delete lending record
         removeLending(nftAddress, oNftId);
+
+        emit NFT_Redeemed(nftAddress, oNftId);
     }
 
     /** MetaRents Platform settings & configuration **/
@@ -884,5 +892,8 @@ contract Gateway is
         return IERC165(_contract).supportsInterface(IID_IERC721);
     }
 
-    
+    ///@dev to get rent balance for an NFT
+    function getRentBalance(uint256 _RNFT_tokenId) external view returns (uint256) {
+        return rentBalance[_RNFT_tokenId];
+    }
 }

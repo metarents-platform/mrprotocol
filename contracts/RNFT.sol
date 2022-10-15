@@ -277,7 +277,6 @@ contract RNFT is
         uint256 oNftId,
         address originalNFTOwner
     ) public onlyAdmin {
-        require (_rmetadata[RTokenId].isRentBalanceWithdrawn, "Funds not withdrawn yet");
         if (isRented(RTokenId)) _terminateRent(nftAddress, RTokenId, oNftId, originalNFTOwner);
         // Reset Owner->RNFT mapping to 0
         _OwnerRTokenID[nftAddress][originalNFTOwner][oNftId] = 0;
@@ -290,8 +289,6 @@ contract RNFT is
             originalNFTOwner,
             oNftId
         );
-        // revokes the renter's operating status on the original NFT. DECENTRALAND
-        IDCL(nftAddress).setUpdateOperator(oNftId, originalNFTOwner);
     }
 
     function _burnRNFT(uint256 _RTokenId) public onlyAdmin {
