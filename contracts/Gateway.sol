@@ -220,6 +220,16 @@ contract Gateway is
         // I commented because _onlyApprovedorOwner() modifier already reverts the txn in this case
         // require(isERC721Compatible(nftAddress), "Contract is not ERC721-compatible");
 
+        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[
+            original_nftId
+        ];
+        // check if this asset is already listed in the marketplace
+        require(
+            _lendRecord.lender != address(0)
+                && _lendRecord.nftAddress != address(0)
+                && _lendRecord.nftId != 0,
+            "NFT is already listed in the market");
+
         /** Validate lending parameters and duration*/
         /** Check timeUnit against time constants */
         require(
@@ -252,9 +262,6 @@ contract Gateway is
         address payable owner = payable(
             IERC721(nftAddress).ownerOf(original_nftId)
         );
-        Lending storage _lendRecord = lendRegistry[nftAddress].lendingMap[
-            original_nftId
-        ];
         _lendRecord.lender = owner;
         _lendRecord.nftAddress = nftAddress;
         _lendRecord.nftId = original_nftId;
