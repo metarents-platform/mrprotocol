@@ -225,9 +225,9 @@ contract Gateway is
         ];
         // check if this asset is already listed in the marketplace
         require(
-            _lendRecord.lender != address(0)
-                && _lendRecord.nftAddress != address(0)
-                && _lendRecord.nftId != 0,
+            _lendRecord.lender == address(0)
+                && _lendRecord.nftAddress == address(0)
+                && _lendRecord.nftId == 0,
             "NFT is already listed in the market");
 
         /** Validate lending parameters and duration*/
